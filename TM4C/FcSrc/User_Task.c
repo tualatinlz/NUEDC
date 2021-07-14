@@ -6,7 +6,7 @@
 void UserTask_OneKeyCmd(void)
 {
 		static u8 counter1,counter2 = 0;
-		u16 wholeLength = 1500;
+		u16 wholeLength = 3000;
 		LX_Change_Mode(3);
 		switch(hmi.mode){
 			case 1:FC_Lock();
@@ -39,14 +39,16 @@ void UserTask_FollowLine(u8 wholeLength){
 			}
 		}
 		else if(stage == 1){
-			OneKey_Takeoff(90);
+			OneKey_Takeoff(80);
 			stage = 2;
 		}
 		else if(stage == 2){
 			if(k210.angel>180 && k210.angel<357)	Left_Rotate(360-k210.angel,10);
 			else if(k210.angel<180 && k210.angel>3) Right_Rotate(k210.angel,10); 
-			else Horizontal_Move(distance,velocity,k210.angel);
-			counter++;
+			else {
+				Horizontal_Move(distance,velocity,k210.angel);
+				counter++;
+			}
 		}
 		else if(stage==3){
 			OneKey_Land();
