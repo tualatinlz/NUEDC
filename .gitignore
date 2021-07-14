@@ -16,6 +16,8 @@ gen/
 
 build/
 
+*.uvguix.*
+
 # gradle
 
 .gradle/
