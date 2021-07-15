@@ -3,7 +3,6 @@
 #include "ANO_DT_LX.h"
 #include "ANO_Math.h"
 #include "Drv_PwmOut.h"
-#include "LX_FC_State.h"
 #include "LX_FC_EXT_Sensor.h"
 #include "Drv_AnoOf.h"
 #include "Drv_adc.h"
@@ -56,131 +55,7 @@ _fc_bat_un fc_bat;
 //遥控器数据处理
 static inline void RC_Data_Task(float dT_s)
 {
-	static u8 fail_safe_change_mod, fail_safe_return_home;
-	static u8 mod_f[3];
-	static u16 mod_f_time_cnt;
-
-	//有遥控信号且没有失控标记才执行
-	if (rc_in.no_signal == 0 && rc_in.fail_safe == 0)
-	{
-		//摇杆数据设置模式（姿态+气压定高，定高定点，程控）
-		//注意，程控模式下，飞控只响应发送指令提供的信号，不再响应摇杆。
-		if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1200)
-		{
-			LX_Change_Mode(1);
-			mod_f[0] = 1;
-		}
-		else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1700)
-		{
-			LX_Change_Mode(2);
-			mod_f[0] = 2;
-		}
-		else
-		{
-			LX_Change_Mode(3);
-			mod_f[0] = 3;
-		}
-		//有切换模式时执行
-		if (mod_f[1] != mod_f[0])
-		{
-			mod_f[1] = mod_f[0];
-			//如果是模式3，自增一次。
-			if (mod_f[0] == 3)
-			{
-				mod_f[2]++;
-			}
-		}
-		//此段程序功能时2000ms内检测切换程控模式的次数,达到3次则执行返航
-		if (mod_f[2] != 0)
-		{
-			if (mod_f_time_cnt < 2000)
-			{
-				mod_f_time_cnt += 1e3f * dT_s;
-			}
-			else
-			{
-				u8 tmp;
-				if (mod_f[2] >= 3)
-				{
-					//执行返航
-					tmp = OneKey_Return_Home();
-				}
-				else
-				{
-					//null
-				}
-				//reset
-				if (tmp)
-				{
-					mod_f_time_cnt = 0;
-					mod_f[2] = 0;
-				}
-			}
-		}
-
-		//摇杆数据转换物理控制量
-		//摇杆数据转换到+-500并加死区
-		float tmp_ch_dz[4];
-		tmp_ch_dz[ch_1_rol] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_1_rol] - 1500), 0, 40);
-		tmp_ch_dz[ch_2_pit] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_2_pit] - 1500), 0, 40);
-		tmp_ch_dz[ch_3_thr] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_3_thr] - 1500), 0, 80);
-		tmp_ch_dz[ch_4_yaw] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_4_yaw] - 1500), 0, 80);
-		//准备上锁时，ROL,PIT,YAW无效
-		if (sti_fun.pre_locking)
-		{
-			tmp_ch_dz[ch_1_rol] = 0;
-			tmp_ch_dz[ch_2_pit] = 0;
-			tmp_ch_dz[ch_4_yaw] = 0;
-		}
-		//摇杆转换姿态量、油门量
-		//注意0.00217f和0.00238f是为了对应的补偿死区减小的部分，原本为0.002f，±500转换到±1。
-		//注意正负号需要满足ANO坐标系定义，一般情况姿态角表示方向（包括上位机）和遥控摇杆反向都与飞控使用的ANO坐标系不同。
-//		if(mod_f[0]<2)
-//		{		
-			rt_tar.st_data.rol = tmp_ch_dz[ch_1_rol] * 0.00217f * MAX_ANGLE;
-			rt_tar.st_data.pit = -tmp_ch_dz[ch_2_pit] * 0.00217f * MAX_ANGLE;		//因为摇杆俯仰方向和定义的俯仰方向相反，所以取负
-			rt_tar.st_data.thr = (rc_in.rc_ch.st_data.ch_[ch_3_thr] - 1000);		//0.1%
-			rt_tar.st_data.yaw_dps = -tmp_ch_dz[ch_4_yaw] * 0.00238f * MAX_YAW_DPS; //因为摇杆航向方向和定义的航向方向相反，所以取负		
-//		}
-		//实时XYZ-YAW期望速度
-//		rt_tar.st_data.yaw_dps = 0;
-//		rt_tar.st_data.vel_x = 0;
-//		rt_tar.st_data.vel_y = 0;
-//		rt_tar.st_data.vel_z = 0;
-		//=====
-		dt.fun[0x41].WTS = 1; //将要发送rt_tar数据。
-		//失控保护标记复位
-		fail_safe_change_mod = 0;
-		fail_safe_return_home = 0;
-	}
-	else //无遥控信号
-	{
-		//解锁后，丢失信号失控需要触发返航（不可返航时会自动触发降落）
-		if (fc_sta.unlock_sta != 0)
-		{
-			//对应的改变模式
-			if (fail_safe_change_mod == 0)
-			{
-				//失控保护，切换到程控模式
-				fail_safe_change_mod = LX_Change_Mode(3);
-			}
-			else if (fail_safe_return_home == 0)
-			{
-				//切换到程控模式后，发送返航指令
-				fail_safe_return_home = OneKey_Return_Home();
-			}
-		}
-
-		//失控保护时目标值
-		rt_tar.st_data.rol = 0;
-		rt_tar.st_data.pit = 0;
-		rt_tar.st_data.thr = 350; //用于模式0，避免模式0时失控，油门过大飞跑，给一个稍低于中位的油门
-		//这里会把实时XYZ-YAW期望速度置零		
-		rt_tar.st_data.yaw_dps = 0;
-		rt_tar.st_data.vel_x =
-			rt_tar.st_data.vel_y =
-				rt_tar.st_data.vel_z = 0;
-	}
+	
 }
 
 //输出给电调
@@ -270,13 +145,9 @@ void ANO_LX_Task()
 		//遥控数据处理
 		//RC_Data_Task(0.01f);
 		//飞控状态处理
-		LX_FC_State_Task(0.01f); 
+		//LX_FC_State_Task(0.01f); 
 		//匿名光流状态检测
 		AnoOF_Check_State(0.01f);
-		//K210相机状态检测
-		K210_Check_State(0.01f);
-		//HMI显示屏状态检测
-		HMI_Check_State(0.01f);
 		//==
 		//计100ms
 		tmp_cnt[1]++;

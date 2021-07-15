@@ -2,40 +2,6 @@
 
 _k210_st k210;
 static uint8_t _datatemp[50];
-static float check_time_ms[2];
-void K210_Check_State(float dT_s)
-{
-	u8 tmp[2];
-	//连接检查
-	if (check_time_ms[0] < 500)
-	{
-		check_time_ms[0]++;
-		k210.link_sta = 1;
-	}
-	else
-	{
-		k210.link_sta = 0;
-	}
-	//数据检查1
-	if (check_time_ms[1] < 500)
-	{
-		check_time_ms[1]++;
-		tmp[0] = 1;
-	}
-	else
-	{
-		tmp[0] = 1;
-	}
-	//设置工作状态
-	if (tmp[0])
-	{
-		k210.work_sta = 1;
-	}
-	else
-	{
-		k210.work_sta = 1;
-	}
-}
 
 //K210_GetOneByte是初级数据解析函数，串口每接收到一字节光流数据，调用本函数一次，函数参数就是串口收到的数据
 //当本函数多次被调用，最终接收到完整的一帧数据后，会自动调用数据解析函数K210_DataAnl
@@ -82,8 +48,6 @@ void K210_GetOneByte(uint8_t data)
 	{
 		rxstate = 0;
 		_datatemp[4 + _data_cnt] = data;
-		//		DT_data_cnt = _data_cnt+5;
-		//
 		K210_DataAnl(_datatemp, _data_cnt + 5); //
 	}
 	else

@@ -3,7 +3,7 @@
 
 //==引用
 #include "SysConfig.h"
-
+#include "Drv_K210.h"
 //==定义/声明
 //====通用传感器数据====
 typedef struct
@@ -28,13 +28,6 @@ typedef struct
 	s32 distance_cm;
 
 } __attribute__((__packed__)) _general_dis_st;
-
-typedef struct
-{
-	//
-	u8 number;
-	u16 angel;
-} __attribute__((__packed__)) _k210_sts;
 
 typedef union {
 	u8 byte[6];
@@ -72,11 +65,6 @@ typedef union {
 	_fc_gps_st st_data;
 } _fc_gps_un;
 //====
-
-typedef union {
-	u8 byte[3];
-	_k210_sts st_data;
-} _k210_un;
 
 typedef struct
 {

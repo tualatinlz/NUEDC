@@ -1,5 +1,4 @@
 #include "LX_FC_Fun.h"
-#include "LX_FC_State.h"
 #include "ANO_DT_LX.h"
 
 /*==========================================================================
@@ -20,6 +19,7 @@
  * 只有您的支持，匿名才能做得更好。  
 ===========================================================================*/
 
+_fc_state_st fc_sta;
 //////////////////////////////////////////////////////////////////////
 //基本功能函数
 //////////////////////////////////////////////////////////////////////
@@ -176,6 +176,82 @@ u8 Horizontal_Move(u16 distance_cm, u16 velocity_cmps, u16 dir_angle_0_360)
 	}
 }
 
+//指定对地高度(距离cm)
+u8 Vertical_Target(u32 height_cm)
+{
+	//
+	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
+	{
+		//按协议发送指令
+		dt.cmd_send.CID = 0X10;
+		dt.cmd_send.CMD[0] = 0X01;
+		dt.cmd_send.CMD[1] = 0X02;
+		//
+		dt.cmd_send.CMD[2] = BYTE0(height_cm);
+		dt.cmd_send.CMD[3] = BYTE1(height_cm);
+		dt.cmd_send.CMD[4] = BYTE2(height_cm);
+		dt.cmd_send.CMD[5] = BYTE3(height_cm);
+		//
+		CMD_Send(0xff, &dt.cmd_send);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+//上升(距离cm，速度cms)
+u8 Vertical_Up(u16 distance_cm, u16 velocity_cm)
+{
+	//
+	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
+	{
+		//按协议发送指令
+		dt.cmd_send.CID = 0X10;
+		dt.cmd_send.CMD[0] = 0X02;
+		dt.cmd_send.CMD[1] = 0X01;
+		//
+		dt.cmd_send.CMD[2] = BYTE0(distance_cm);
+		dt.cmd_send.CMD[3] = BYTE1(distance_cm);
+		dt.cmd_send.CMD[4] = BYTE0(velocity_cm);
+		dt.cmd_send.CMD[5] = BYTE1(velocity_cm);
+		//
+		CMD_Send(0xff, &dt.cmd_send);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+//下降(距离cm，速度cms)
+u8 Vertical_Down(u16 distance_cm, u16 velocity_cm)
+{
+	//
+	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
+	{
+		//按协议发送指令
+		dt.cmd_send.CID = 0X10;
+		dt.cmd_send.CMD[0] = 0X02;
+		dt.cmd_send.CMD[1] = 0X02;
+		//
+		dt.cmd_send.CMD[2] = BYTE0(distance_cm);
+		dt.cmd_send.CMD[3] = BYTE1(distance_cm);
+		dt.cmd_send.CMD[4] = BYTE0(velocity_cm);
+		dt.cmd_send.CMD[5] = BYTE1(velocity_cm);
+		//
+		CMD_Send(0xff, &dt.cmd_send);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+//左转(角度deg，角速度degs)
 u8 Left_Rotate(u16 degree, u16 velocity_degree)
 {
 	//
@@ -200,6 +276,8 @@ u8 Left_Rotate(u16 degree, u16 velocity_degree)
 	}
 }
 
+
+//右转(角度deg，角速度degs)
 u8 Right_Rotate(u16 degree, u16 velocity_degree)
 {
 	//
@@ -224,7 +302,8 @@ u8 Right_Rotate(u16 degree, u16 velocity_degree)
 	}
 }
 
-//水平校准
+
+//快速水平校准
 u8 Horizontal_Calibrate()
 {
 	//

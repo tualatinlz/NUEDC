@@ -2,12 +2,6 @@
 
 _hmi_st hmi;
 static uint8_t _datatemp[50];
-static float check_time_ms[2];
-void HMI_Check_State(float dT_s)
-{
-		hmi.link_sta = 1;
-		hmi.work_sta = 1;
-}
 
 //hmi_GetOneByte是初级数据解析函数，串口每接收到一字节光流数据，调用本函数一次，函数参数就是串口收到的数据
 //当本函数多次被调用，最终接收到完整的一帧数据后，会自动调用数据解析函数hmi_DataAnl
@@ -54,9 +48,7 @@ void HMI_GetOneByte(uint8_t data)
 	{
 		rxstate = 0;
 		_datatemp[4 + _data_cnt] = data;
-		//		DT_data_cnt = _data_cnt+5;
-		//
-		HMI_DataAnl(_datatemp, _data_cnt + 5); //
+		HMI_DataAnl(_datatemp, _data_cnt + 5);
 	}
 	else
 	{

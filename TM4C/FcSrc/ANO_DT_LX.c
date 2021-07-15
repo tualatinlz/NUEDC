@@ -2,8 +2,9 @@
 #include "ANO_LX.h"
 #include "LX_FC_EXT_Sensor.h"
 #include "Drv_led.h"
-#include "LX_FC_State.h"
 #include "Drv_Uart.h"
+#include "Drv_K210.h"
+#include "Drv_EY4600.h"
 
 /*==========================================================================
  * 描述    ：凌霄飞控通信主程序
@@ -67,6 +68,10 @@ void ANO_DT_Init(void)
 	dt.fun[0xf1].D_Addr = 0xff;
 	dt.fun[0xf1].fre_ms = 0;	  //0 由外部触发
 	dt.fun[0xf1].time_cnt_ms = 0; //设置初始相位，单位1ms
+	//
+	dt.fun[0xf2].D_Addr = 0xff;
+	dt.fun[0xf2].fre_ms = 0;	  //0 由外部触发
+	dt.fun[0xf2].time_cnt_ms = 0; //设置初始相位，单位1ms
 }
 
 //数据发送接口
@@ -192,11 +197,11 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len)
 	//凌霄飞控当前的运行状态
 	else if (*(data + 2) == 0X06)
 	{
-		fc_sta.fc_mode_sta = *(data + 4);
-		fc_sta.unlock_sta = *(data + 5);
-		fc_sta.cmd_fun.CID = *(data + 6);
-		fc_sta.cmd_fun.CMD_0 = *(data + 7);
-		fc_sta.cmd_fun.CMD_1 = *(data + 8);
+		//fc_sta.fc_mode_sta = *(data + 4);
+		//fc_sta.unlock_sta = *(data + 5);
+		//fc_sta.cmd_fun.CID = *(data + 6);
+		//fc_sta.cmd_fun.CMD_0 = *(data + 7);
+		//fc_sta.cmd_fun.CMD_1 = *(data + 8);
 	}
 	//飞行速度，目前没用到
 	else if (*(data + 2) == 0X07)
@@ -367,6 +372,15 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 		}
 	}
 	break;
+	case 0xf2: //EY4600参数传递
+	{
+		//
+		for (u8 i = 0; i < 3; i++)
+		{
+			send_buffer[(*_cnt)++] = ey4600.rawdata[i];
+		}
+	}
+	break;
 	default:
 		break;
 	}
@@ -403,7 +417,7 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.SC = check_sum1;
 		dt.ck_back.AC = check_sum2;
 	}
-	if(frame_num == 0xf1) ANO_DT_USER_Send_Data(send_buffer,_cnt);
+	if(frame_num >= 0xf1) ANO_DT_USER_Send_Data(send_buffer,_cnt);
 	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
 //===================================================================

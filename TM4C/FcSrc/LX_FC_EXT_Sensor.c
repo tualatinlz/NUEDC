@@ -77,29 +77,10 @@ static inline void General_Distance_Data_Handle()
 	}
 }
 
-static inline void K210_Data_Handle()
-{
-	static u8 k210_update_cnt;
-	if (k210_update_cnt != k210.update_cnt)
-	{
-		if(k210.work_sta){
-			//
-			k210_update_cnt = k210.update_cnt;
-			//
-			ext_sens.k210.st_data.number = k210.number;
-			ext_sens.k210.st_data.angel = k210.angel;
-			//´¥·¢·¢ËÍ
-			dt.fun[0xf1].WTS = 1;
-		}
-	}
-}
-
 void LX_FC_EXT_Sensor_Task(float dT_s) //1ms
 {
 	//
 	General_Velocity_Data_Handle();
 	//
 	General_Distance_Data_Handle();
-	//
-	K210_Data_Handle();
 }
