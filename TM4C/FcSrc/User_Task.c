@@ -28,8 +28,12 @@ void UserTask_FollowLine(u8 wholeLength){
 		static u8 stage = 0;			//Á÷³ÌÖ´ÐÐ½×¶Î
 		u16 maxcnt = wholeLength * 5; 
 		LX_Change_Mode(3);
-		
-		
+		if(hmi.oldmode != hmi.mode){
+			counter = 0;
+			stage = 0;
+			count1 = 0;	
+			hmi.oldmode = hmi.mode;
+		}			
 		if(stage == 0){
 			FC_Unlock();
 			count1++;
@@ -49,6 +53,7 @@ void UserTask_FollowLine(u8 wholeLength){
 				Horizontal_Move(distance,velocity,k210.angel);
 				counter++;
 			}
+			if(k210.number == 3) stage = 3;
 		}
 		else if(stage==3){
 			OneKey_Land();

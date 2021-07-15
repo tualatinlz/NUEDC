@@ -11,7 +11,8 @@ typedef struct
 	u8 link_sta; //连接状态：0，未连接。1，已连接。
 	u8 work_sta; //工作状态：0，异常。1，正常
 	//
-	u8 	mode;   //飞行程序选择
+	u8 mode;   //飞行程序选择
+	u8 oldmode;
 	u16 angel;
   u8 update_cnt;  //数据更新计数。
 } _hmi_st;

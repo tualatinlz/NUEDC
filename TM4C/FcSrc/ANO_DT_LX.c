@@ -1,6 +1,5 @@
 #include "ANO_DT_LX.h"
 #include "ANO_LX.h"
-#include "Drv_RcIn.h"
 #include "LX_FC_EXT_Sensor.h"
 #include "Drv_led.h"
 #include "LX_FC_State.h"
@@ -75,6 +74,12 @@ static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length)
 {
 	//
 	UartSendLXIMU(dataToSend, length);
+}
+
+static void ANO_DT_USER_Send_Data(u8 *dataToSend, u8 length)
+{
+	//
+	UartSendUser(dataToSend, length);
 }
 
 //===================================================================
@@ -320,7 +325,7 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	{
 		for (u8 i = 0; i < 20; i++)
 		{
-			send_buffer[(*_cnt)++] = rc_in.rc_ch.byte_data[i];
+			//send_buffer[(*_cnt)++] = rc_in.rc_ch.byte_data[i];
 		}
 	}
 	break;
@@ -398,7 +403,8 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.SC = check_sum1;
 		dt.ck_back.AC = check_sum2;
 	}
-	ANO_DT_LX_Send_Data(send_buffer, _cnt);
+	if(frame_num == 0xf1) ANO_DT_USER_Send_Data(send_buffer,_cnt);
+	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
 //===================================================================
 //

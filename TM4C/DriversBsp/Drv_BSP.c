@@ -25,6 +25,7 @@ u8 All_Init()
 	//初始化电调输出功能
 	DrvPwmOutInit();
 	MyDelayMs(100);
+	DrvUart1Init(500000);
 	//串口2初始化，函数参数为波特率
 	DrvUart2Init(500000);
 	//串口3初始化

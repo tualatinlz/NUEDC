@@ -1,0 +1,15 @@
+添加新外设步骤
+1.仿照光流给出驱动 （遵循匿名协议） 包括初始化结构体
+2.drv uart出配置响应的串口中断函数
+
+如果需要向上位机传送数据包：（uart5 同时会发给LX）
+1.驱动中link worksta全为1 必要时ano lx中调用check
+2.ext sensor中加入data handle .h中加入对应结构体
+3.DT LX中加入init addsenddata 和 dataexchange部分
+
+主要参考光流
+
+AA FF F3 04 00 01 9F CA
+AA FF F3 04 00 02 A0 CB
+AA FF F3 04 00 03 A1 CC
+AA FF F3 04 00 03 A2 CD

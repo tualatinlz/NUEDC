@@ -68,7 +68,6 @@ void HMI_GetOneByte(uint8_t data)
 
 static void HMI_DataAnl(uint8_t *data, uint8_t len)
 {
-	hmi.mode = *(data + 5);
 	u8 check_sum1 = 0, check_sum2 = 0;
 	if (*(data + 3) != (len - 6)) //判断数据长度是否正确
 		return;
@@ -83,6 +82,7 @@ static void HMI_DataAnl(uint8_t *data, uint8_t len)
 
 	if (*(data + 2) == 0XF3) //飞行程序控制
 	{
-		//hmi.mode = *(data + 5);
+		hmi.oldmode = hmi.mode;
+		hmi.mode = *(data + 5);
 	}
 }
