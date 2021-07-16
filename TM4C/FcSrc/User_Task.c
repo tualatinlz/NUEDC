@@ -1,23 +1,35 @@
 #include "User_Task.h"
 #include "LX_FC_Fun.h"
-#include "LX_FC_EXT_Sensor.h"
+//#include "LX_FC_EXT_Sensor.h"
+#include "Drv_K210.h"
+#include "Drv_HMI.h"
 
+//_k210_st k210;
 void UserTask_OneKeyCmd(void)
 {
 		static u8 counter1,counter2 = 0;
 		u16 wholeLength = 3000;
 		LX_Change_Mode(3);
+		k210.number = 5;
 		switch(hmi.mode){
-			case 1:FC_Lock();
+			case 0x01:FC_Lock();
 				break;
-			case 2:OneKey_Land();
+			case 0x02:OneKey_Land();
 				break;
-			case 3:FC_Unlock();
+			case 0x03:FC_Unlock();
 				break;
-			case 4:	UserTask_FollowLine(wholeLength);
+			case 0x04:UserTask_FollowLine(wholeLength);
 				break;
-			case 5:	test(80,7);
+			case 0x05:test(80,7);
 				break;
+			case 0x10: Horizontal_Calibrate();
+				break;
+			case 0x11: Mag_Calibrate();
+				break;
+			case 0x12: ACC_Calibrate();
+				break;
+			case 0x13: GYR_Calibrate();
+				break;			
 		}
 }
 
@@ -48,7 +60,7 @@ void UserTask_FollowLine(u8 wholeLength){
 			stage = 2;
 		}
 		else if(stage == 2){
-			if(k210.angel>180 && k210.angel<357)	Left_Rotate(360-k210.angel,10);
+			if(k210.angel >180 && k210.angel<357)	Left_Rotate(360-k210.angel,10);
 			else if(k210.angel<180 && k210.angel>3) Right_Rotate(k210.angel,10); 
 			else {
 				Horizontal_Move(distance,velocity,k210.angel);

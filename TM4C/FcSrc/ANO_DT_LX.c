@@ -5,7 +5,6 @@
 #include "Drv_led.h"
 #include "Drv_Uart.h"
 #include "Drv_K210.h"
-#include "Drv_EY4600.h"
 
 /*==========================================================================
  * 描述    ：凌霄飞控通信主程序
@@ -67,14 +66,262 @@ void ANO_DT_Init(void)
 	dt.fun[0xe2].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf1].D_Addr = 0xff;
-	dt.fun[0xf1].fre_ms = 10;	  //0 由外部触发
+	dt.fun[0xf1].fre_ms = 300;	  //0 由外部触发
 	dt.fun[0xf1].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf2].D_Addr = 0xff;
 	dt.fun[0xf2].fre_ms = 0;	  //0 由外部触发
 	dt.fun[0xf2].time_cnt_ms = 0; //设置初始相位，单位1ms
+	//
+	dt.fun[0xf3].D_Addr = 0xff;
+	dt.fun[0xf3].fre_ms = 500;	  //0 由外部触发
+	dt.fun[0xf3].time_cnt_ms = 0; //设置初始相位，单位1ms
 }
 
+//===================================================================
+//数据发送实现程序
+//===================================================================
+static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
+{
+	s16 temp_data;
+	s32 temp_data_32;
+	//根据需要发送的帧ID，也就是frame_num，来填充数据，填充到send_buffer数组内
+	switch (frame_num)
+	{
+	case 0x00: //CHECK返回
+	{
+		send_buffer[(*_cnt)++] = dt.ck_send.ID;
+		send_buffer[(*_cnt)++] = dt.ck_send.SC;
+		send_buffer[(*_cnt)++] = dt.ck_send.AC;
+	}
+	break;
+	case 0x0d: //电池数据
+	{
+		for (u8 i = 0; i < 4; i++)
+		{
+			send_buffer[(*_cnt)++] = fc_bat.byte_data[i];
+		}
+	}
+	break;
+	case 0x30: //GPS数据
+	{
+		//
+		for (u8 i = 0; i < 23; i++)
+		{
+			send_buffer[(*_cnt)++] = ext_sens.fc_gps.byte[i];
+		}
+	}
+	break;
+	case 0x33: //通用速度测量数据
+	{
+		//
+		for (u8 i = 0; i < 6; i++)
+		{
+			send_buffer[(*_cnt)++] = ext_sens.gen_vel.byte[i];
+		}
+	}
+	break;
+	case 0x34: //通用距离测量数据
+	{
+		//
+		for (u8 i = 0; i < 7; i++)
+		{
+			send_buffer[(*_cnt)++] = ext_sens.gen_dis.byte[i];
+		}
+	}
+	break;
+	case 0x40: //遥控数据帧
+	{
+		for (u8 i = 0; i < 20; i++)
+		{
+			//send_buffer[(*_cnt)++] = rc_in.rc_ch.byte_data[i];
+		}
+	}
+	break;
+	case 0x41: //实时控制数据帧
+	{
+		for (u8 i = 0; i < 14; i++)
+		{
+			send_buffer[(*_cnt)++] = rt_tar.byte_data[i];
+		}
+	}
+	break;
+	case 0xe0: //CMD命令帧
+	{
+		send_buffer[(*_cnt)++] = dt.cmd_send.CID;
+		for (u8 i = 0; i < 10; i++)
+		{
+			send_buffer[(*_cnt)++] = dt.cmd_send.CMD[i];
+		}
+	}
+	break;
+	case 0xe2: //PARA返回
+	{
+		temp_data = dt.par_data.par_id;
+		send_buffer[(*_cnt)++] = BYTE0(temp_data);
+		send_buffer[(*_cnt)++] = BYTE1(temp_data);
+		temp_data_32 = dt.par_data.par_val;
+		send_buffer[(*_cnt)++] = BYTE0(temp_data_32);
+		send_buffer[(*_cnt)++] = BYTE1(temp_data_32);
+		send_buffer[(*_cnt)++] = BYTE2(temp_data_32);
+		send_buffer[(*_cnt)++] = BYTE3(temp_data_32);
+	}
+	break;
+	case 0xf1: //K210参数传递
+	{
+		//
+		for (u8 i = 0; i < 4; i++)
+		{
+			send_buffer[(*_cnt)++] = ext_sens.k210.byte[i];
+		}
+	}
+	break;
+	case 0xf2: //EY4600参数传递
+	{
+		//
+		for (u8 i = 0; i < 8; i++)
+		{
+			send_buffer[(*_cnt)++] = ey4600.rawdata[i];
+			ey4600.rawdata[i] = 0;
+		}
+	}
+	break;
+	case 0xf3: //HMI参数传递
+	{
+		
+	}
+	break;
+	default:
+		break;
+	}
+}
+
+//1ms调用一次，用于通信交换数据
+void ANO_LX_Data_Exchange_Task(float dT_s)
+{
+	//=====检测CMD是否返回了校验
+	CK_Back_Check();
+	//=====检测是否触发发送
+	Check_To_Send(0x30);
+	Check_To_Send(0x33);
+	Check_To_Send(0x34);
+	Check_To_Send(0x40);
+	Check_To_Send(0x41);
+	Check_To_Send(0xe0);
+	Check_To_Send(0xe2);
+	Check_To_Send(0x0d);
+	Check_To_Send(0xf1);
+	Check_To_Send(0xf2);
+	Check_To_Send(0xf3);
+}
+
+//===================================================================
+
+static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
+{
+	u8 _cnt = 0;
+
+	send_buffer[_cnt++] = 0xAA;
+	send_buffer[_cnt++] = dt_frame->D_Addr;
+	send_buffer[_cnt++] = frame_num;
+	send_buffer[_cnt++] = 0;
+	//==
+	//add_send_data
+	Add_Send_Data(frame_num, &_cnt, send_buffer);
+	//==
+	send_buffer[3] = _cnt - 4;
+	//==
+	u8 check_sum1 = 0, check_sum2 = 0;
+	for (u8 i = 0; i < _cnt; i++)
+	{
+		check_sum1 += send_buffer[i];
+		check_sum2 += check_sum1;
+	}
+	send_buffer[_cnt++] = check_sum1;
+	send_buffer[_cnt++] = check_sum2;
+	//
+	if (dt.wait_ck != 0 && frame_num == 0xe0)
+	{
+		dt.ck_back.ID = frame_num;
+		dt.ck_back.SC = check_sum1;
+		dt.ck_back.AC = check_sum2;
+	}
+	if(frame_num >= 0xf1) ANO_DT_USER_Send_Data(send_buffer,_cnt);
+	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
+}
+//===================================================================
+//
+
+void HMI_Frame_Send(u8 target)
+{
+	u8 _cnt = 0;
+	send_buffer[_cnt++] = 0x74;
+	send_buffer[_cnt++] = target;
+	send_buffer[_cnt++] = 0x2E;
+	send_buffer[_cnt++] = 0x74;
+	send_buffer[_cnt++] = 0x78;
+	send_buffer[_cnt++] = 0x74;
+	send_buffer[_cnt++] = 0x3D;
+	send_buffer[_cnt++] = 0x22;
+	switch(target){
+		case 0x30:
+			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/1000+0x30;
+			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/100%10+0x30;
+			send_buffer[_cnt++] = 0x2E;
+			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/10 % 10+0x30;
+			send_buffer[_cnt++] = fc_bat.st_data.voltage_100%1000+0x30;
+			break;
+		case 0x31:
+			if(ext_sens.gen_dis.st_data.distance_cm<100)	send_buffer[_cnt++] = 0x20;
+			else send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/100 + 0x30;
+			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
+			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
+			break;
+		case 0x32:send_buffer[_cnt++] = k210.number+0x30;
+			break;	
+	}
+	send_buffer[_cnt++] = 0x22;
+	send_buffer[_cnt++] = 0xFF;
+	send_buffer[_cnt++] = 0xFF;
+	send_buffer[_cnt++] = 0xFF;
+	ANO_DT_USER_Send_Data(send_buffer,_cnt);
+}
+
+static void Check_To_Send(u8 frame_num)
+{
+	//
+	if (dt.fun[frame_num].fre_ms)
+	{
+		//
+		if (dt.fun[frame_num].time_cnt_ms < dt.fun[frame_num].fre_ms)
+		{
+			dt.fun[frame_num].time_cnt_ms++;
+		}
+		else
+		{
+			dt.fun[frame_num].time_cnt_ms = 1;
+			dt.fun[frame_num].WTS = 1; //标记等待发送
+		}
+	}
+	else
+	{
+		//等待外部触发
+	}
+	//
+	if (dt.fun[frame_num].WTS)
+	{
+		dt.fun[frame_num].WTS = 0;
+		//实际发送
+		if(frame_num == 0xf3) {
+			HMI_Frame_Send(hmi.voltage_addr);
+			HMI_Frame_Send(hmi.height_addr);
+			HMI_Frame_Send(hmi.k210_addr);
+		}
+		else Frame_Send(frame_num, &dt.fun[frame_num]);
+	}
+}
+
+//===================================================================
 //数据发送接口
 static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length)
 {
@@ -88,8 +335,66 @@ static void ANO_DT_USER_Send_Data(u8 *dataToSend, u8 length)
 	UartSendUser(dataToSend, length);
 }
 
+
 //===================================================================
-//数据接收程序
+//IMU指令发送
+//===================================================================
+//CMD发送
+void CMD_Send(u8 dest_addr, _cmd_st *cmd)
+{
+	dt.fun[0xe0].D_Addr = dest_addr;
+	dt.fun[0xe0].WTS = 1; //标记CMD等待发送
+	dt.wait_ck = 1;		  //标记等待校验
+}
+//CHECK返回
+void CK_Back(u8 dest_addr, _ck_st *ck)
+{
+	dt.fun[0x00].D_Addr = dest_addr;
+	dt.fun[0x00].WTS = 1; //标记CMD等待发送
+}
+//PARA返回
+void PAR_Back(u8 dest_addr, _par_st *par)
+{
+	dt.fun[0xe2].D_Addr = dest_addr;
+	dt.fun[0xe2].WTS = 1; //标记CMD等待发送
+}
+
+//若指令没发送成功，会持续重新发送，间隔50ms。
+static u8 repeat_cnt;
+static inline void CK_Back_Check()
+{
+	static u8 time_dly;
+	if (dt.wait_ck == 1)
+	{
+		if (time_dly < 50) //50ms
+		{
+			time_dly++;
+		}
+		else
+		{
+			time_dly = 0;
+			repeat_cnt++;
+			if (repeat_cnt < 5)
+			{
+				dt.fun[0xe0].WTS = 1; //标记等待发送，重发
+			}
+			else
+			{
+				repeat_cnt = 0;
+				dt.wait_ck = 0;
+			}
+		}
+	}
+	else
+	{
+		time_dly = 0;
+		repeat_cnt = 0;
+	}
+}
+
+
+//===================================================================
+//IMU数据接收程序
 //===================================================================
 static u8 DT_RxBuffer[256], DT_data_cnt = 0;
 void ANO_DT_LX_Data_Receive_Prepare(u8 data)
@@ -273,256 +578,6 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len)
 		//赋值参数
 		//Parameter_Set(_par,_val);
 	}
-}
-
-//===================================================================
-//数据发送实现程序
-//===================================================================
-static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
-{
-	s16 temp_data;
-	s32 temp_data_32;
-	//根据需要发送的帧ID，也就是frame_num，来填充数据，填充到send_buffer数组内
-	switch (frame_num)
-	{
-	case 0x00: //CHECK返回
-	{
-		send_buffer[(*_cnt)++] = dt.ck_send.ID;
-		send_buffer[(*_cnt)++] = dt.ck_send.SC;
-		send_buffer[(*_cnt)++] = dt.ck_send.AC;
-	}
-	break;
-	case 0x0d: //电池数据
-	{
-		for (u8 i = 0; i < 4; i++)
-		{
-			send_buffer[(*_cnt)++] = fc_bat.byte_data[i];
-		}
-	}
-	break;
-	case 0x30: //GPS数据
-	{
-		//
-		for (u8 i = 0; i < 23; i++)
-		{
-			send_buffer[(*_cnt)++] = ext_sens.fc_gps.byte[i];
-		}
-	}
-	break;
-	case 0x33: //通用速度测量数据
-	{
-		//
-		for (u8 i = 0; i < 6; i++)
-		{
-			send_buffer[(*_cnt)++] = ext_sens.gen_vel.byte[i];
-		}
-	}
-	break;
-	case 0x34: //通用距离测量数据
-	{
-		//
-		for (u8 i = 0; i < 7; i++)
-		{
-			send_buffer[(*_cnt)++] = ext_sens.gen_dis.byte[i];
-		}
-	}
-	break;
-	case 0x40: //遥控数据帧
-	{
-		for (u8 i = 0; i < 20; i++)
-		{
-			//send_buffer[(*_cnt)++] = rc_in.rc_ch.byte_data[i];
-		}
-	}
-	break;
-	case 0x41: //实时控制数据帧
-	{
-		for (u8 i = 0; i < 14; i++)
-		{
-			send_buffer[(*_cnt)++] = rt_tar.byte_data[i];
-		}
-	}
-	break;
-	case 0xe0: //CMD命令帧
-	{
-		send_buffer[(*_cnt)++] = dt.cmd_send.CID;
-		for (u8 i = 0; i < 10; i++)
-		{
-			send_buffer[(*_cnt)++] = dt.cmd_send.CMD[i];
-		}
-	}
-	break;
-	case 0xe2: //PARA返回
-	{
-		temp_data = dt.par_data.par_id;
-		send_buffer[(*_cnt)++] = BYTE0(temp_data);
-		send_buffer[(*_cnt)++] = BYTE1(temp_data);
-		temp_data_32 = dt.par_data.par_val;
-		send_buffer[(*_cnt)++] = BYTE0(temp_data_32);
-		send_buffer[(*_cnt)++] = BYTE1(temp_data_32);
-		send_buffer[(*_cnt)++] = BYTE2(temp_data_32);
-		send_buffer[(*_cnt)++] = BYTE3(temp_data_32);
-	}
-	break;
-	case 0xf1: //K210参数传递
-	{
-		//
-		for (u8 i = 0; i < 3; i++)
-		{
-			send_buffer[(*_cnt)++] = ext_sens.k210.byte[i];
-		}
-	}
-	break;
-	case 0xf2: //EY4600参数传递
-	{
-		//
-		for (u8 i = 0; i < 8; i++)
-		{
-			send_buffer[(*_cnt)++] = ey4600.rawdata[i];
-			ey4600.rawdata[i] = 0;
-		}
-	}
-	break;
-	default:
-		break;
-	}
-}
-
-//===================================================================
-
-static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
-{
-	u8 _cnt = 0;
-
-	send_buffer[_cnt++] = 0xAA;
-	send_buffer[_cnt++] = dt_frame->D_Addr;
-	send_buffer[_cnt++] = frame_num;
-	send_buffer[_cnt++] = 0;
-	//==
-	//add_send_data
-	Add_Send_Data(frame_num, &_cnt, send_buffer);
-	//==
-	send_buffer[3] = _cnt - 4;
-	//==
-	u8 check_sum1 = 0, check_sum2 = 0;
-	for (u8 i = 0; i < _cnt; i++)
-	{
-		check_sum1 += send_buffer[i];
-		check_sum2 += check_sum1;
-	}
-	send_buffer[_cnt++] = check_sum1;
-	send_buffer[_cnt++] = check_sum2;
-	//
-	if (dt.wait_ck != 0 && frame_num == 0xe0)
-	{
-		dt.ck_back.ID = frame_num;
-		dt.ck_back.SC = check_sum1;
-		dt.ck_back.AC = check_sum2;
-	}
-	if(frame_num >= 0xf1) ANO_DT_USER_Send_Data(send_buffer,_cnt);
-	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
-}
-//===================================================================
-//
-static void Check_To_Send(u8 frame_num)
-{
-	//
-	if (dt.fun[frame_num].fre_ms)
-	{
-		//
-		if (dt.fun[frame_num].time_cnt_ms < dt.fun[frame_num].fre_ms)
-		{
-			dt.fun[frame_num].time_cnt_ms++;
-		}
-		else
-		{
-			dt.fun[frame_num].time_cnt_ms = 1;
-			dt.fun[frame_num].WTS = 1; //标记等待发送
-		}
-	}
-	else
-	{
-		//等待外部触发
-	}
-	//
-	if (dt.fun[frame_num].WTS)
-	{
-		dt.fun[frame_num].WTS = 0;
-		//实际发送
-		Frame_Send(frame_num, &dt.fun[frame_num]);
-	}
-}
-//===================================================================
-
-//CMD发送
-void CMD_Send(u8 dest_addr, _cmd_st *cmd)
-{
-	dt.fun[0xe0].D_Addr = dest_addr;
-	dt.fun[0xe0].WTS = 1; //标记CMD等待发送
-	dt.wait_ck = 1;		  //标记等待校验
-}
-//CHECK返回
-void CK_Back(u8 dest_addr, _ck_st *ck)
-{
-	dt.fun[0x00].D_Addr = dest_addr;
-	dt.fun[0x00].WTS = 1; //标记CMD等待发送
-}
-//PARA返回
-void PAR_Back(u8 dest_addr, _par_st *par)
-{
-	dt.fun[0xe2].D_Addr = dest_addr;
-	dt.fun[0xe2].WTS = 1; //标记CMD等待发送
-}
-
-//若指令没发送成功，会持续重新发送，间隔50ms。
-static u8 repeat_cnt;
-static inline void CK_Back_Check()
-{
-	static u8 time_dly;
-	if (dt.wait_ck == 1)
-	{
-		if (time_dly < 50) //50ms
-		{
-			time_dly++;
-		}
-		else
-		{
-			time_dly = 0;
-			repeat_cnt++;
-			if (repeat_cnt < 5)
-			{
-				dt.fun[0xe0].WTS = 1; //标记等待发送，重发
-			}
-			else
-			{
-				repeat_cnt = 0;
-				dt.wait_ck = 0;
-			}
-		}
-	}
-	else
-	{
-		time_dly = 0;
-		repeat_cnt = 0;
-	}
-}
-
-//1ms调用一次，用于通信交换数据
-void ANO_LX_Data_Exchange_Task(float dT_s)
-{
-	//=====检测CMD是否返回了校验
-	CK_Back_Check();
-	//=====检测是否触发发送
-	Check_To_Send(0x30);
-	Check_To_Send(0x33);
-	Check_To_Send(0x34);
-	Check_To_Send(0x40);
-	Check_To_Send(0x41);
-	Check_To_Send(0xe0);
-	Check_To_Send(0xe2);
-	Check_To_Send(0x0d);
-	Check_To_Send(0xf1);
-	Check_To_Send(0xf2);
 }
 
 //===================================================================

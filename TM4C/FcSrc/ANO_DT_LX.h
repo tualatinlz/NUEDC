@@ -53,6 +53,7 @@ extern _dt_st dt;
 //==º¯ÊýÉùÃ÷
 //static
 static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length);
+static void ANO_DT_USER_Send_Data(u8 *dataToSend, u8 length);
 static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len);
 
 //public
@@ -60,8 +61,10 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len);
 void ANO_DT_Init(void);
 void ANO_LX_Data_Exchange_Task(float dT_s);
 void ANO_DT_LX_Data_Receive_Prepare(u8 data);
+static void Check_To_Send(u8 frame_num);
 //
 void CMD_Send(u8 dest_addr, _cmd_st *cmd);
 void CK_Back(u8 dest_addr, _ck_st *ck);
 void PAR_Back(u8 dest_addr, _par_st *par);
+static inline void CK_Back_Check(void);
 #endif
