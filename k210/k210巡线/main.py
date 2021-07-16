@@ -19,7 +19,7 @@ sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QQQVGA) # 80x60 (4,800 pixels) - O(N^2) max = 2,3040,000.
 sensor.set_hmirror(0)
 sensor.set_vflip(1)
-sensor.set_windowing([0,0,40,56])
+sensor.set_windowing((0,0,80,56))
 sensor.skip_frames(time = 2000)     # WARNING: If you use QQVGA it may take seconds
 fm.register(9, fm.fpioa.UART1_TX, force=True)
 fm.register(10, fm.fpioa.UART1_RX, force=True)
@@ -33,7 +33,7 @@ def check(datal):
         dat=360+datal
         a[6]=dat%256
         a[5]=int(dat/256)
-        print(a[6])
+        #print(a[6])
     sum_check=0;
     add_check=0;
     for i in range(0,a[3]+4):
@@ -47,6 +47,7 @@ while(True):
     output=0;
     clock.tick()
     img = sensor.snapshot()#.binary([THRESHOLD])
+    #img.cut(20,0,8,56)
     img.midpoint(2, bias=0.7, threshold=True, offset=19, invert=True)
     line = img.get_regression([(100,100)], robust = True)
 
@@ -58,6 +59,7 @@ while(True):
             theta_err = line.theta()
         img.draw_line(line.line(), color = 127)
         #print(rho_err,line.magnitude(),rho_err)
+        print(rho_err)
         if line.magnitude()>8:
             #if -40<b_err<40 and -30<t_err<30:
             rho_output = rho_pid.get_pid(rho_err,1)
@@ -77,5 +79,5 @@ while(True):
     lcd.display(img)
     #print(output)#输出参数
     chec=check(output)
-    print(chec)
+    #print(chec)
     uart_A.write(chec)
