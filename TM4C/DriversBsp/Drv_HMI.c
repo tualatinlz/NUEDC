@@ -1,6 +1,8 @@
 #include "Drv_hmi.h"
+#include "LX_FC_EXT_Sensor.h"
+#include "ANO_LX.h"
 
-_hmi_st hmi;
+_hmi_st hmi={0,0,0,0x30,0x31,0x32};
 static uint8_t _datatemp[50];
 
 //hmi_GetOneByte是初级数据解析函数，串口每接收到一字节光流数据，调用本函数一次，函数参数就是串口收到的数据
@@ -78,3 +80,5 @@ static void HMI_DataAnl(uint8_t *data, uint8_t len)
 		hmi.mode = *(data + 5);
 	}
 }
+
+
