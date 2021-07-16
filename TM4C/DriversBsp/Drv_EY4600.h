@@ -9,10 +9,9 @@
 typedef struct
 {
 	//
-	uint8_t rawdata[50];
+	uint16_t rawdata[25];
   u8 update_cnt;  //数据更新计数。
 } _ey4600_st;
-
 //飞控状态
 
 //==数据声明

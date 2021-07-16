@@ -24,14 +24,15 @@ u8 All_Init()
 	//初始化电调输出功能
 	DrvPwmOutInit();
 	MyDelayMs(100);
+	//接数传，后期接HMI
 	DrvUart1Init(500000);
-	//串口2初始化，函数参数为波特率
-	DrvUart2Init(500000);
-	//串口3初始化
+	//串口2初始化 EY4600
+	DrvUart2Init(115200);
+	//串口3初始化 K210
 	DrvUart3Init(115200);
 	//接匿名光流
 	DrvUart4Init(115200);
-	//串口5接imu
+	//串口5接imu 后期接数传
 	DrvUart5Init(500000);
 	MyDelayMs(100);
 	//SBUS输入采集初始化

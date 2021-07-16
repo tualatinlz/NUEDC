@@ -1,6 +1,7 @@
 #include "ANO_DT_LX.h"
 #include "ANO_LX.h"
 #include "LX_FC_EXT_Sensor.h"
+#include "LX_FC_Fun.h"
 #include "Drv_led.h"
 #include "Drv_Uart.h"
 #include "Drv_K210.h"
@@ -66,7 +67,7 @@ void ANO_DT_Init(void)
 	dt.fun[0xe2].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf1].D_Addr = 0xff;
-	dt.fun[0xf1].fre_ms = 0;	  //0 由外部触发
+	dt.fun[0xf1].fre_ms = 10;	  //0 由外部触发
 	dt.fun[0xf1].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf2].D_Addr = 0xff;
@@ -181,10 +182,10 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len)
 		pwm_to_esc.pwm_m2 = *((u16 *)(data + 6));
 		pwm_to_esc.pwm_m3 = *((u16 *)(data + 8));
 		pwm_to_esc.pwm_m4 = *((u16 *)(data + 10));
-		pwm_to_esc.pwm_m5 = *((u16 *)(data + 12));
-		pwm_to_esc.pwm_m6 = *((u16 *)(data + 14));
-		pwm_to_esc.pwm_m7 = *((u16 *)(data + 16));
-		pwm_to_esc.pwm_m8 = *((u16 *)(data + 18));
+		//pwm_to_esc.pwm_m5 = *((u16 *)(data + 12));
+		//pwm_to_esc.pwm_m6 = *((u16 *)(data + 14));
+		//pwm_to_esc.pwm_m7 = *((u16 *)(data + 16));
+		//pwm_to_esc.pwm_m8 = *((u16 *)(data + 18));
 	}
 	//凌霄IMU发出的RGB灯光数据
 	else if (*(data + 2) == 0X0f)
@@ -197,11 +198,11 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len)
 	//凌霄飞控当前的运行状态
 	else if (*(data + 2) == 0X06)
 	{
-		//fc_sta.fc_mode_sta = *(data + 4);
-		//fc_sta.unlock_sta = *(data + 5);
-		//fc_sta.cmd_fun.CID = *(data + 6);
-		//fc_sta.cmd_fun.CMD_0 = *(data + 7);
-		//fc_sta.cmd_fun.CMD_1 = *(data + 8);
+		fc_sta.fc_mode_sta = *(data + 4);
+		fc_sta.unlock_sta = *(data + 5);
+		fc_sta.cmd_fun.CID = *(data + 6);
+		fc_sta.cmd_fun.CMD_0 = *(data + 7);
+		fc_sta.cmd_fun.CMD_1 = *(data + 8);
 	}
 	//飞行速度，目前没用到
 	else if (*(data + 2) == 0X07)
@@ -375,9 +376,10 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	case 0xf2: //EY4600参数传递
 	{
 		//
-		for (u8 i = 0; i < 3; i++)
+		for (u8 i = 0; i < 8; i++)
 		{
 			send_buffer[(*_cnt)++] = ey4600.rawdata[i];
+			ey4600.rawdata[i] = 0;
 		}
 	}
 	break;
@@ -520,6 +522,7 @@ void ANO_LX_Data_Exchange_Task(float dT_s)
 	Check_To_Send(0xe2);
 	Check_To_Send(0x0d);
 	Check_To_Send(0xf1);
+	Check_To_Send(0xf2);
 }
 
 //===================================================================

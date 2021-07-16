@@ -453,16 +453,6 @@
               <FileType>5</FileType>
               <FilePath>..\FcSrc\LX_FC_Fun.h</FilePath>
             </File>
-            <File>
-              <FileName>LX_FC_State.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\FcSrc\LX_FC_State.c</FilePath>
-            </File>
-            <File>
-              <FileName>LX_FC_State.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\FcSrc\LX_FC_State.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -518,6 +508,16 @@
               <FileType>5</FileType>
               <FilePath>..\DriversBsp\Drv_HMI.h</FilePath>
             </File>
+            <File>
+              <FileName>Drv_EY4600.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DriversBsp\Drv_EY4600.c</FilePath>
+            </File>
+            <File>
+              <FileName>Drv_EY4600.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\DriversBsp\Drv_EY4600.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -567,16 +567,6 @@
               <FileName>Drv_PwmOut.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\DriversMcu\TM4C123\Drivers\Drv_PwmOut.h</FilePath>
-            </File>
-            <File>
-              <FileName>Drv_RcIn.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DriversMcu\TM4C123\Drivers\Drv_RcIn.c</FilePath>
-            </File>
-            <File>
-              <FileName>Drv_RcIn.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\DriversMcu\TM4C123\Drivers\Drv_RcIn.h</FilePath>
             </File>
             <File>
               <FileName>Drv_Uart.c</FileName>
