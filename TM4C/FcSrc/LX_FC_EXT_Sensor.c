@@ -17,7 +17,6 @@
 ===========================================================================*/
 #include "LX_FC_EXT_Sensor.h"
 #include "Drv_AnoOf.h"
-#include "Drv_K210.h"
 #include "ANO_DT_LX.h"
 
 _fc_ext_sensor_st ext_sens;

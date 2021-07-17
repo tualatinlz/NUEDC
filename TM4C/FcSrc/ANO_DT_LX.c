@@ -170,10 +170,9 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	case 0xf1: //K210参数传递
 	{
 		//
-		for (u8 i = 0; i < 4; i++)
-		{
-			send_buffer[(*_cnt)++] = ext_sens.k210.byte[i];
-		}
+			send_buffer[(*_cnt)++] = k210.number;
+			send_buffer[(*_cnt)++] = BYTE1(k210.angel);
+			send_buffer[(*_cnt)++] = BYTE0(k210.angel);
 	}
 	break;
 	case 0xf2: //EY4600参数传递
@@ -182,7 +181,6 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 		for (u8 i = 0; i < 8; i++)
 		{
 			send_buffer[(*_cnt)++] = ey4600.rawdata[i];
-			ey4600.rawdata[i] = 0;
 		}
 	}
 	break;
@@ -278,6 +276,11 @@ void HMI_Frame_Send(u8 target)
 			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
 			break;
 		case 0x32:send_buffer[_cnt++] = k210.number+0x30;
+			break;
+		case 0x33:
+				for(int i=0;i<5;i++){
+					send_buffer[_cnt++] = ey4600.rawdata[i];
+				}
 			break;	
 	}
 	send_buffer[_cnt++] = 0x22;
@@ -316,6 +319,7 @@ static void Check_To_Send(u8 frame_num)
 			HMI_Frame_Send(hmi.voltage_addr);
 			HMI_Frame_Send(hmi.height_addr);
 			HMI_Frame_Send(hmi.k210_addr);
+			HMI_Frame_Send(0x33);
 		}
 		else Frame_Send(frame_num, &dt.fun[frame_num]);
 	}

@@ -75,8 +75,6 @@ typedef struct
 	_general_pos_un gen_pos;
 	_general_dis_un gen_dis;
 	_fc_gps_un fc_gps;
-	_k210_un k210;
-
 } _fc_ext_sensor_st;
 //==Êý¾ÝÉùÃ÷
 extern _fc_ext_sensor_st ext_sens;

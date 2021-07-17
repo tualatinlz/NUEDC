@@ -19,8 +19,6 @@ extern _ey4600_st ey4600;
 //==º¯ÊıÉùÃ÷
 //static
 static void EY4600_DataAnl(uint8_t *data_buf, uint8_t num);
-
 //public
 void EY4600_GetOneByte(uint8_t data);
-void EY4600_Check_State(float dT_s);
 #endif

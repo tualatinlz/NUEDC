@@ -1,26 +1,23 @@
 #include "User_Task.h"
 #include "LX_FC_Fun.h"
-//#include "LX_FC_EXT_Sensor.h"
 #include "Drv_K210.h"
 #include "Drv_HMI.h"
 
-//_k210_st k210;
 void UserTask_OneKeyCmd(void)
 {
 		static u8 counter1,counter2 = 0;
 		u16 wholeLength = 3000;
 		LX_Change_Mode(3);
-		k210.number = 5;
 		switch(hmi.mode){
 			case 0x01:FC_Lock();
 				break;
 			case 0x02:OneKey_Land();
 				break;
-			case 0x03:FC_Unlock();
+			case 0x03:test(80,0);
 				break;
 			case 0x04:UserTask_FollowLine(wholeLength);
 				break;
-			case 0x05:test(80,7);
+			case 0x05:test(80,10);
 				break;
 			case 0x10: Horizontal_Calibrate();
 				break;

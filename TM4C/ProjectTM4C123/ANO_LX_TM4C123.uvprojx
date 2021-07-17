@@ -459,16 +459,6 @@
           <GroupName>DriversBsp</GroupName>
           <Files>
             <File>
-              <FileName>Drv_BSP.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DriversBsp\Drv_BSP.c</FilePath>
-            </File>
-            <File>
-              <FileName>Drv_BSP.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\DriversBsp\Drv_BSP.h</FilePath>
-            </File>
-            <File>
               <FileName>Ano_Math.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DriversBsp\Ano_Math.c</FilePath>
@@ -517,6 +507,16 @@
               <FileName>Drv_EY4600.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\DriversBsp\Drv_EY4600.h</FilePath>
+            </File>
+            <File>
+              <FileName>Drv_BSP.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DriversBsp\Drv_BSP.c</FilePath>
+            </File>
+            <File>
+              <FileName>Drv_BSP.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\DriversBsp\Drv_BSP.h</FilePath>
             </File>
           </Files>
         </Group>
