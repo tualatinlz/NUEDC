@@ -66,7 +66,7 @@ void ANO_DT_Init(void)
 	dt.fun[0xe2].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf1].D_Addr = 0xff;
-	dt.fun[0xf1].fre_ms = 300;	  //0 由外部触发
+	dt.fun[0xf1].fre_ms = 0;	  //0 由外部触发
 	dt.fun[0xf1].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf2].D_Addr = 0xff;
@@ -171,8 +171,10 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	{
 		//
 			send_buffer[(*_cnt)++] = k210.number;
-			send_buffer[(*_cnt)++] = BYTE1(k210.angel);
 			send_buffer[(*_cnt)++] = BYTE0(k210.angel);
+			send_buffer[(*_cnt)++] = BYTE1(k210.angel);
+			send_buffer[(*_cnt)++] = k210.leftorright;
+			send_buffer[(*_cnt)++] = k210.offset;
 	}
 	break;
 	case 0xf2: //EY4600参数传递
@@ -281,7 +283,10 @@ void HMI_Frame_Send(u8 target)
 				for(int i=0;i<5;i++){
 					send_buffer[_cnt++] = ey4600.rawdata[i];
 				}
-			break;	
+			break;
+		case 0x34:
+			send_buffer[_cnt++] = hmi.mode + 0x30;
+			break;				
 	}
 	send_buffer[_cnt++] = 0x22;
 	send_buffer[_cnt++] = 0xFF;
@@ -289,6 +294,7 @@ void HMI_Frame_Send(u8 target)
 	send_buffer[_cnt++] = 0xFF;
 	ANO_DT_USER_Send_Data(send_buffer,_cnt);
 }
+
 
 static void Check_To_Send(u8 frame_num)
 {

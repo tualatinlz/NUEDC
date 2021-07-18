@@ -1,4 +1,5 @@
 #include "Drv_K210.h"
+#include "Ano_DT_LX.h"
 
 _k210_st k210;
 static uint8_t _datatemp[50];
@@ -49,6 +50,7 @@ void K210_GetOneByte(uint8_t data)
 		rxstate = 0;
 		_datatemp[4 + _data_cnt] = data;
 		K210_DataAnl(_datatemp, _data_cnt + 5); //
+		dt.fun[0xf1].WTS = 1;
 	}
 	else
 	{
@@ -84,13 +86,11 @@ static void K210_DataAnl(uint8_t *data, uint8_t len)
 			k210.number = *(data + 5);
 			k210.update_cnt++;
 		}
-	}
-	if (*(data + 2) == 0XF2)//
-	{
-			
-	}
-	else if (*(data + 2) == 0X34) //
-	{
-
+		else if (*(data + 4) == 2) //¸ß¶È´«Êä
+		{
+			k210.leftorright = *(data + 5);
+			k210.offset = *(data + 6);
+			k210.update_cnt++;
+		}
 	}
 }

@@ -6,14 +6,14 @@
 void UserTask_OneKeyCmd(void)
 {
 		static u8 counter1,counter2 = 0;
-		u16 wholeLength = 3000;
+		u16 wholeLength = 30000;
 		LX_Change_Mode(3);
 		switch(hmi.mode){
 			case 0x01:FC_Lock();
 				break;
 			case 0x02:OneKey_Land();
 				break;
-			case 0x03:test(80,0);
+			case 0x03:FC_Unlock();
 				break;
 			case 0x04:UserTask_FollowLine(wholeLength);
 				break;
@@ -34,11 +34,11 @@ void UserTask_FollowLine(u8 wholeLength){
 		static u16 counter = 0;
 		static u8 count1 = 0;
 		u8 distance = 2;	//每次移动的距离
-		u8 velocity = 10;	//移动速度 最小10cm/s
+		u8 velocity = 20;	//移动速度 最小10cm/s
 		static u8 stage = 0;			//流程执行阶段
-		u16 maxcnt = wholeLength * 5; 
+		u16 maxcnt = 30000; 
 		LX_Change_Mode(3);
-		if(hmi.oldmode != hmi.mode){
+		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
 			count1 = 0;	
@@ -53,17 +53,17 @@ void UserTask_FollowLine(u8 wholeLength){
 			}
 		}
 		else if(stage == 1){
-			OneKey_Takeoff(80);
+			OneKey_Takeoff(100);
 			stage = 2;
 		}
 		else if(stage == 2){
-			if(k210.angel >180 && k210.angel<357)	Left_Rotate(360-k210.angel,10);
-			else if(k210.angel<180 && k210.angel>3) Right_Rotate(k210.angel,10); 
-			else {
-				Horizontal_Move(distance,velocity,k210.angel);
-				counter++;
-			}
-			if(k210.number == 3) stage = 3;
+				if(k210.angel >180 && k210.angel<357)	Left_Rotate(360-k210.angel,30);
+				else if(k210.angel<180 && k210.angel>3) Right_Rotate(k210.angel,30); 
+				else {
+					if(k210.offset/3 > 3)	Horizontal_Move(k210.offset/3,velocity,k210.leftorright*180+90);
+					else counter++;
+					Horizontal_Move(distance,velocity,0);
+				}
 		}
 		else if(stage==3){
 			OneKey_Land();
@@ -80,8 +80,6 @@ void UserTask_FollowLine(u8 wholeLength){
 void test(u16 height,u16 dh){
 		static u16 counter = 0;
 		static u8 count1 = 0;
-		u8 distance = 2;	//每次移动的距离
-		u8 velocity = 10;	//移动速度 最小10cm/s
 		static u8 stage = 0;			//流程执行阶段
 		u16 maxcnt = 2000; 
 		LX_Change_Mode(3);
@@ -105,9 +103,50 @@ void test(u16 height,u16 dh){
 			stage = 2;
 		}
 		else if(stage == 2){
-			if(maxcnt % 200 <100) Vertical_Target(height + dh);
-			else Vertical_Target(height - dh);
+			if(maxcnt % 200 <100) Horizontal_Move(1,10,90);
+			else Horizontal_Move(1,10,270);
 			maxcnt++;
+		}
+		else if(stage==3){
+			OneKey_Land();
+			hmi.mode = 0;
+			stage = 0;
+			counter = 0;
+		}
+
+		if(counter >= maxcnt){
+			stage=3;
+		}
+}
+
+void f2021(u16 height,u16 dh){
+		static u16 counter = 0;
+		static u8 count1 = 0;
+		static u8 stage = 0;			//流程执行阶段
+		u16 maxcnt = 2000; 
+		LX_Change_Mode(3);
+		//切换状态时清除局部变量
+		if(hmi.oldmode != hmi.mode){
+			counter = 0;
+			stage = 0;
+			count1 = 0;	
+			hmi.oldmode = hmi.mode;
+		}			
+		if(stage == 0){
+			FC_Unlock();
+			count1++;
+			if(count1>=100){
+				stage = 1;
+				count1=0;
+			}
+		}
+		else if(stage == 1){
+			OneKey_Takeoff(100);
+			stage = 2;
+		}
+		else if(stage == 2){
+			Horizontal_Move(2,5,90);
+			
 		}
 		else if(stage==3){
 			OneKey_Land();

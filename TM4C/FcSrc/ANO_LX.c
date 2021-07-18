@@ -40,23 +40,9 @@ _fc_bat_un fc_bat;
 //模式2：定点        ->遥控CH1/CH2控制水平方向速度，并且遥控CH3(油门摇杆)控制垂直方向速度,遥控CH4控制YAW姿态。
 //模式3：程控        ->遥控摇杆不参与控制
 
-//
-#define MAX_ANGLE 3500	//最大打杆时角度， 单位 0.01度
-#define MAX_YAW_DPS 200 //最大打杆时YAW角速度，单位度每秒
-//
-#define MAX_VELOCITY 500  //最大打杆时水平速度，单位厘米每秒
-#define MAX_VER_VEL_P 300 //最大打杆时垂直正速度，单位厘米每秒
-#define MAX_VER_VEL_N 200 //最大打杆时垂直负速度，单位厘米每秒
-
 //////////////////////////////////////////////////////////////////////
 //以下为飞控基础功能程序，不建议用户改动和调用。
 //////////////////////////////////////////////////////////////////////
-
-//遥控器数据处理
-static inline void RC_Data_Task(float dT_s)
-{
-	
-}
 
 //输出给电调
 static inline void ESC_Output(u8 unlocked)
@@ -133,7 +119,7 @@ static void Bat_Voltage_Data_Handle()
 //定时1ms调用
 void ANO_LX_Task()
 {
-	static u8 mod_f[3];
+	//static u8 mod_f[3];
 	static u16 tmp_cnt[2];
 	//计10ms
 	tmp_cnt[0]++;

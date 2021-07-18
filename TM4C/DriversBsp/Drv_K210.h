@@ -11,6 +11,8 @@ typedef struct
 	//
 	u8 	number; 
 	u16 angel;
+	u8 leftorright;
+	u8 offset;
   u8 update_cnt;  //数据更新计数。
 } _k210_st;
 
