@@ -246,8 +246,8 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.SC = check_sum1;
 		dt.ck_back.AC = check_sum2;
 	}
-	if(frame_num >= 0xf1) ANO_DT_USER_Send_Data(send_buffer,_cnt);
-	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
+	ANO_DT_USER_Send_Data(send_buffer,_cnt);
+	ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
 //===================================================================
 //
@@ -269,7 +269,7 @@ void HMI_Frame_Send(u8 target)
 			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/100%10+0x30;
 			send_buffer[_cnt++] = 0x2E;
 			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/10 % 10+0x30;
-			send_buffer[_cnt++] = fc_bat.st_data.voltage_100%1000+0x30;
+			send_buffer[_cnt++] = fc_bat.st_data.voltage_100%10+0x30;
 			break;
 		case 0x31:
 			if(ext_sens.gen_dis.st_data.distance_cm<100)	send_buffer[_cnt++] = 0x20;
@@ -277,15 +277,14 @@ void HMI_Frame_Send(u8 target)
 			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
 			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
 			break;
-		case 0x32:send_buffer[_cnt++] = k210.number+0x30;
+		case 0x32:send_buffer[_cnt++] = hmi.mode + 0x30;
 			break;
-		case 0x33:
-				for(int i=0;i<5;i++){
-					send_buffer[_cnt++] = ey4600.rawdata[i];
-				}
+		case 0x33:send_buffer[_cnt++] = k210.number+0x30;
 			break;
 		case 0x34:
-			send_buffer[_cnt++] = hmi.mode + 0x30;
+			for(int i=0;i<5;i++){
+					send_buffer[_cnt++] = ey4600.rawdata[i];
+			}
 			break;				
 	}
 	send_buffer[_cnt++] = 0x22;
