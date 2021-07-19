@@ -3,9 +3,7 @@
 2.drv uart出配置响应的串口中断函数
 
 如果需要向上位机传送数据包：（uart5 同时会发给LX）
-1.驱动中link worksta全为1 必要时ano lx中调用check
-2.ext sensor中加入data handle .h中加入对应结构体
-3.DT LX中加入init addsenddata 和 dataexchange部分
+3.DT LX中加入init add senddata 和 dataexchange部分 直接读取结构体内变量
 
 主要参考光流
 

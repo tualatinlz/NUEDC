@@ -60,10 +60,11 @@ void UserTask_FollowLine(u8 wholeLength){
 				if(k210.angel >180 && k210.angel<357)	Left_Rotate(360-k210.angel,30);
 				else if(k210.angel<180 && k210.angel>3) Right_Rotate(k210.angel,30); 
 				else {
-					if(k210.offset/3 > 3)	Horizontal_Move(k210.offset/3,velocity,k210.leftorright*180+90);
+					if(k210.offset/2 > 3)	Horizontal_Move(k210.offset/2,velocity,k210.leftorright*180+90);
 					else counter++;
 					Horizontal_Move(distance,velocity,0);
 				}
+				if(k210.number == 3) stage = 3;
 		}
 		else if(stage==3){
 			OneKey_Land();

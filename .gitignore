@@ -18,6 +18,8 @@ gen/
 
 build/
 
+Data/
+
 *.uvguix.*
 
 # gradle
