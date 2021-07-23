@@ -76,6 +76,10 @@ void ANO_DT_Init(void)
 	dt.fun[0xf3].D_Addr = 0xff;
 	dt.fun[0xf3].fre_ms = 500;	  //0 由外部触发
 	dt.fun[0xf3].time_cnt_ms = 0; //设置初始相位，单位1ms
+	//
+	dt.fun[0xf4].D_Addr = 0xff;
+	dt.fun[0xf4].fre_ms = 1000;	  //0 由外部触发
+	dt.fun[0xf4].time_cnt_ms = 0; //设置初始相位，单位1ms
 }
 
 //===================================================================
@@ -175,6 +179,8 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 			send_buffer[(*_cnt)++] = BYTE1(k210.angel);
 			send_buffer[(*_cnt)++] = k210.leftorright;
 			send_buffer[(*_cnt)++] = k210.offset;
+			send_buffer[(*_cnt)++] = BYTE0(k210.distance);
+			send_buffer[(*_cnt)++] = BYTE1(k210.distance);
 	}
 	break;
 	case 0xf2: //EY4600参数传递
@@ -186,9 +192,14 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 		}
 	}
 	break;
-	case 0xf3: //HMI参数传递
+	case 0xf3: //
 	{
-		
+
+	}
+	break;
+	case 0xf4: //K210指令回传
+	{
+			send_buffer[(*_cnt)++] = 0;//拍照指令
 	}
 	break;
 	default:
@@ -213,6 +224,7 @@ void ANO_LX_Data_Exchange_Task(float dT_s)
 	Check_To_Send(0xf1);
 	Check_To_Send(0xf2);
 	Check_To_Send(0xf3);
+	Check_To_Send(0xf4);
 }
 
 //===================================================================
@@ -246,12 +258,14 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.SC = check_sum1;
 		dt.ck_back.AC = check_sum2;
 	}
-	if(frame_num >= 0xf1) ANO_DT_USER_Send_Data(send_buffer,_cnt);
-	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
+	if(frame_num == 0xf4) ANO_DT_K210_Send_Data(send_buffer,_cnt);
+	ANO_DT_USER_Send_Data(send_buffer,_cnt);
+	ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
 //===================================================================
 //
 
+//向串口屏发送相关数据
 void HMI_Frame_Send(u8 target)
 {
 	u8 _cnt = 0;
@@ -269,7 +283,7 @@ void HMI_Frame_Send(u8 target)
 			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/100%10+0x30;
 			send_buffer[_cnt++] = 0x2E;
 			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/10 % 10+0x30;
-			send_buffer[_cnt++] = fc_bat.st_data.voltage_100%1000+0x30;
+			send_buffer[_cnt++] = fc_bat.st_data.voltage_100%10+0x30;
 			break;
 		case 0x31:
 			if(ext_sens.gen_dis.st_data.distance_cm<100)	send_buffer[_cnt++] = 0x20;
@@ -277,15 +291,14 @@ void HMI_Frame_Send(u8 target)
 			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
 			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
 			break;
-		case 0x32:send_buffer[_cnt++] = k210.number+0x30;
+		case 0x32:send_buffer[_cnt++] = hmi.mode + 0x30;
 			break;
-		case 0x33:
-				for(int i=0;i<5;i++){
-					send_buffer[_cnt++] = ey4600.rawdata[i];
-				}
+		case 0x33:send_buffer[_cnt++] = k210.number+0x30;
 			break;
 		case 0x34:
-			send_buffer[_cnt++] = hmi.mode + 0x30;
+			for(int i=0;i<5;i++){
+					send_buffer[_cnt++] = ey4600.rawdata[i];
+			}
 			break;				
 	}
 	send_buffer[_cnt++] = 0x22;
@@ -343,6 +356,12 @@ static void ANO_DT_USER_Send_Data(u8 *dataToSend, u8 length)
 {
 	//
 	UartSendUser(dataToSend, length);
+}
+
+static void ANO_DT_K210_Send_Data(u8 *dataToSend, u8 length)
+{
+	//
+	UartSendK210(dataToSend, length);
 }
 
 

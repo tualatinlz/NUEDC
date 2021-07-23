@@ -10,10 +10,11 @@ typedef struct
 {
 	//
 	u8 	number; 
-	u16 angel;
-	u8 leftorright;
-	u8 offset;
-  u8 update_cnt;  //数据更新计数。
+	u16 angel;			 //巡线角度
+	u8  leftorright; //左右偏移方向
+	u8  offset;			 //左右偏移量
+  u8  update_cnt;  //数据更新计数
+	u16  distance;    //激光测距输出
 } _k210_st;
 
 //飞控状态

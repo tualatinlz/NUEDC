@@ -226,7 +226,7 @@ u8 Vertical_Up(u16 distance_cm, u16 velocity_cm)
 	}
 }
 
-//下降(距离cm，速度cms)
+//下降(距离cm，速度cms 最小速度10)
 u8 Vertical_Down(u16 distance_cm, u16 velocity_cm)
 {
 	//
