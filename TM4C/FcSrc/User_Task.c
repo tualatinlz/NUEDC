@@ -33,23 +33,27 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x04:UserTask_FollowLine(wholeLength);
 				break;
-			case 0x05://test(80,10);
+			case 0x05:OneKey_Takeoff(100);
 				break;
-			case 0x06:rotate(80,10);
+			case 0x06:rotate(80,0);
 				break;
 			case 0x07:UserTask_FollowLineN(wholeLength);
 				break;
 			case 0x10:Horizontal_Calibrate();
+								hmi.mode = 0;
 				break;
 			case 0x11:Mag_Calibrate();
+								hmi.mode = 0;
 				break;
 			case 0x12:ACC_Calibrate();
+								hmi.mode = 0;
 				break;
 			case 0x13:GYR_Calibrate();
+								hmi.mode = 0;
 				break;			
 		}
 }
-
+//地面线循迹
 void UserTask_FollowLine(u8 wholeLength){
 		static u16 counter = 0;
 		static u8 count1 = 0;
@@ -72,9 +76,9 @@ void UserTask_FollowLine(u8 wholeLength){
 			delay20();
 		}
 		else{
-		if(stage == 0){
-			FC_Unlock();
-			count1++;
+			if(stage == 0){
+				FC_Unlock();
+				count1++;
 			if(count1>=150){
 				stage = 1;
 				count1=0;
@@ -119,8 +123,8 @@ void UserTask_FollowLineN(u8 wholeLength){
 		u16 maxcnt = 50000; 
 		static u8 count1 = 0;
 		static u8 stage = 0;			//流程执行阶段
-		u8 distance = 10;				  //每次移动的距离
-		u8 velocity = 25;	        //移动速度 最小10cm/s
+		u8 distance = 20;				  //每次移动的距离
+		u8 velocity = 10;	        //移动速度 最小10cm/s
 		u8 targetHeight = 100;
 		LX_Change_Mode(3);
 		
@@ -138,53 +142,83 @@ void UserTask_FollowLineN(u8 wholeLength){
 		else{
 			if(stage == 0){
 				FC_Unlock();
-				count1++;
+				stage = 1;
 				//起飞前等待
-				if(count1>=150){
-					stage = 1;
-					count1=0;
-				}
-			}
-		else if(stage == 1){
-			OneKey_Takeoff(targetHeight);
-			stage = 2;
-			maxcount = 100;
-			delay_flag = 1;
-		}
-		else if(stage == 2){
-			//前进
-			Horizontal_Move(distance,velocity,90);			
-			maxcount = distance * 50 / velocity;
-			delay_flag = 1;
-			stage = 3;
-		}
-		else if(stage == 3){
-			if(k210.distance <= 100){
-				Horizontal_Move(k210.distance-70,velocity,0);
-				maxcount = (k210.distance-70) / velocity;
+				maxcount = 150;
 				delay_flag = 1;
-				stage  = 4;
 			}
-			else stage = 2;
-		}
-		else if(stage == 4){
-			//前进
+			else if(stage == 1){
+				OneKey_Takeoff(targetHeight);
+				stage = 2;
+				maxcount = 100;
+				delay_flag = 1;
+			}
+			else if(stage == 2){
+				//前进
 				Horizontal_Move(distance,velocity,90);			
 				maxcount = distance * 50 / velocity;
 				delay_flag = 1;
-				//stage = 5;
-		}
-		else if(stage==5){
-			//高度调整			
-			if(k210.offset > 3){
-				if(k210.leftorright == 0){
-					Vertical_Up(k210.offset,10);
-				}
-				else if(k210.leftorright == 1){
-					Vertical_Down(k210.offset,10);
-				}
+				stage = 3;
 			}
-		}
+			else if(stage == 3){
+				if(k210.distance <= 100){
+					Horizontal_Move(k210.distance-70,velocity,0);
+					maxcount = (k210.distance-70) / velocity;
+					delay_flag = 1;
+					stage  = 4;
+				}
+				else stage = 4;
+			}
+			else if(stage == 4){	//距离确定后向右巡线
+				//前进
+				Horizontal_Move(distance,velocity,90);			
+				maxcount = distance * 50 / velocity;
+				delay_flag = 1;
+				stage = 5;
+				//if(k210.barcode == 1) stage = 6; //识别到二维码
+				
+			}
+			else if(stage==5){	//根据电线调整飞机高度
+				//高度调整			
+				if(k210.offset > 3){
+					if(k210.leftorright == 0){
+						Vertical_Up(k210.offset,10);
+					}
+					else if(k210.leftorright == 1){
+						Vertical_Down(k210.offset,10);
+					}
+				}
+				stage = 4;
+			}
+			else if(stage==6){	//识别到条形码后
+				//高度调整			
+				stage = 7;
+			}
+			else if(stage == 7){	//距离确定后向右巡线
+				//前进
+				Horizontal_Move(distance,velocity,90);			
+				maxcount = distance * 50 / velocity;
+				delay_flag = 1;
+				stage = 8;
+				//if(k210.distance < 100) stage = 9; //到达另一个杆子的位置		
+			}
+			else if(stage==8){	//根据电线调整飞机高度
+				//高度调整			
+				if(k210.offset > 3){
+					if(k210.leftorright == 0){
+						Vertical_Up(k210.offset,10);
+					}
+					else if(k210.leftorright == 1){
+						Vertical_Down(k210.offset,10);
+					}
+				}
+				stage = 7;
+			}
+			else if(stage==9){	//绕杆
+				//高度调整			
+				//rotate(50,0); //纯旋转
+			}
+			 
 		//超时降落
 		if(counter >= maxcnt){
 			OneKey_Land();
@@ -195,6 +229,7 @@ void UserTask_FollowLineN(u8 wholeLength){
 	}
 }
 
+//原地自转
 void rotate(u16 r,u8 direction){
 		static u16 counter = 0;
 		u16 maxcnt = 50000;       //定时降落
@@ -233,13 +268,15 @@ void rotate(u16 r,u8 direction){
 				delay_flag = 1;
 			}
 			else if(stage == 2){
-				Left_Rotate(deg,degs);
+				if(direction == 0)Left_Rotate(deg,degs);
+				else Right_Rotate(deg,degs);
 				maxcount = deg * 50 /degs;
 				delay_flag = 1;
 				stage = 3;
 			}
 			else if(stage==3){
-				Horizontal_Move(distance,velocity,90);
+				if(direction == 0) Horizontal_Move(distance,velocity,90);
+				else Horizontal_Move(distance,velocity,270);
 				maxcount = distance * 50 / velocity;
 				delay_flag = 1;
 				stage = 4;

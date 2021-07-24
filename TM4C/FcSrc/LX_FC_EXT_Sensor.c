@@ -38,8 +38,8 @@ static inline void General_Velocity_Data_Handle()
 		//XY_VEL
 		if (ano_of.of1_sta && ano_of.work_sta) //光流有效
 		{
-			ext_sens.gen_vel.st_data.hca_velocity_cmps[0] = ano_of.of1_dx;
-			ext_sens.gen_vel.st_data.hca_velocity_cmps[1] = ano_of.of1_dy;
+			ext_sens.gen_vel.st_data.hca_velocity_cmps[0] = ano_of.of2_dx_fix;
+			ext_sens.gen_vel.st_data.hca_velocity_cmps[1] = ano_of.of2_dy_fix;
 		}
 		else //无效
 		{
@@ -47,7 +47,7 @@ static inline void General_Velocity_Data_Handle()
 			ext_sens.gen_vel.st_data.hca_velocity_cmps[1] = 0x8000;
 		}
 	}
-	if (of_alt_update_cnt != ano_of.alt_update_cnt)
+	if (of_alt_update_cnt != ano_of.alt_update_cnt  && ano_of.of_quality>200)
 	{
 		//
 		of_alt_update_cnt = ano_of.alt_update_cnt;
