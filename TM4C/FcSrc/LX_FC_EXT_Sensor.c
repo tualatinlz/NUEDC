@@ -41,11 +41,11 @@ static inline void General_Velocity_Data_Handle()
 			ext_sens.gen_vel.st_data.hca_velocity_cmps[0] = ano_of.of2_dx_fix;
 			ext_sens.gen_vel.st_data.hca_velocity_cmps[1] = ano_of.of2_dy_fix;
 		}
-		//else //无效
-		//{
-		//	ext_sens.gen_vel.st_data.hca_velocity_cmps[0] = 0x8000;
-		//	ext_sens.gen_vel.st_data.hca_velocity_cmps[1] = 0x8000;
-		//}
+		else //无效
+		{
+			ext_sens.gen_vel.st_data.hca_velocity_cmps[0] = 0x0000;
+			ext_sens.gen_vel.st_data.hca_velocity_cmps[1] = 0x0000;
+		}
 	}
 	if (of_alt_update_cnt != ano_of.alt_update_cnt)
 	{
