@@ -20,14 +20,6 @@
  * 淘宝    ：anotc.taobao.com
  * 技术Q群 ：190169595
  * 项目合作：18084888982，18061373080
-============================================================================
- * 匿名科创团队感谢大家的支持，欢迎大家进群互相交流、讨论、学习。
- * 若您觉得匿名有不好的地方，欢迎您拍砖提意见。
- * 若您觉得匿名好，请多多帮我们推荐，支持我们。
- * 匿名开源程序代码欢迎您的引用、延伸和拓展，不过在希望您在使用时能注明出处。
- * 君子坦荡荡，小人常戚戚，匿名坚决不会请水军、请喷子，也从未有过抹黑同行的行为。  
- * 开源不易，生活更不容易，希望大家互相尊重、互帮互助，共同进步。
- * 只有您的支持，匿名才能做得更好。  
 ===========================================================================*/
 
 _rt_tar_un rt_tar;
@@ -48,16 +40,12 @@ _fc_bat_un fc_bat;
 static inline void ESC_Output(u8 unlocked)
 {
 	static u8 esc_calibrated;
-	static s16 pwm[8];
+	static s16 pwm[4];
 	//
 	pwm[0] = pwm_to_esc.pwm_m1 * 0.1f;
 	pwm[1] = pwm_to_esc.pwm_m2 * 0.1f;
 	pwm[2] = pwm_to_esc.pwm_m3 * 0.1f;
 	pwm[3] = pwm_to_esc.pwm_m4 * 0.1f;
-	pwm[4] = pwm_to_esc.pwm_m5 * 0.1f;
-	pwm[5] = pwm_to_esc.pwm_m6 * 0.1f;
-	pwm[6] = pwm_to_esc.pwm_m7 * 0.1f;
-	pwm[7] = pwm_to_esc.pwm_m8 * 0.1f;
 	//
 
 	if (esc_calibrated == 0)
@@ -93,14 +81,14 @@ static inline void ESC_Output(u8 unlocked)
 		//解锁才输出，否则输出0油门
 		if (unlocked)
 		{
-			for (u8 i = 0; i < 8; i++)
+			for (u8 i = 0; i < 4; i++)
 			{
 				pwm[i] = LIMIT(pwm[i], 0, 1000);
 			}
 		}
 		else
 		{
-			for (u8 i = 0; i < 8; i++)
+			for (u8 i = 0; i < 4; i++)
 			{
 				pwm[i] = 0;
 			}

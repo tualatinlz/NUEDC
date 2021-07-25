@@ -111,6 +111,24 @@ u8 OneKey_Return_Home()
 	}
 }
 
+//一键悬停
+u8 OneKey_Hang()
+{
+	//
+	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
+	{
+		//按协议发送指令
+		dt.cmd_send.CID = 0X10;
+		dt.cmd_send.CMD[0] = 0X00;
+		dt.cmd_send.CMD[1] = 0X04;
+		CMD_Send(0xff, &dt.cmd_send);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 //一键起飞(高度cm)
 u8 OneKey_Takeoff(u16 height_cm)
 {
