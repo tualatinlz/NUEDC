@@ -26,7 +26,7 @@ fm.register(7, fm.fpioa.UART1_TX, force=True)
 uart_A = UART(UART.UART1, 115200, 8, None, 1, timeout=1000, read_buf_len=4096)
 
 class ctrl(object):
-    work_mode = 0x05 #工作模式，可以通过串口设置成其他模式
+    work_mode = 0x02 #工作模式，可以通过串口设置成其他模式
 #YOLOV2模型
 class kkpu(object):
     def __init__(self,task,anchor,labels):#模型初始化
@@ -282,86 +282,92 @@ class dot(object):
         #清零标志位
         dot.pixels = 0
         dot.ok = 0
+
+#线性规划寻找直线
+class line_st(object):
+
+    def __init__(self):
+        1
+
+
 #巡线角度信息发送
-def check(datal):
-    a =[0xAA,0xFF,0xf1,0x03,0x00,0x00,0x00,0x00,0x00]
-    #print(a[4])
-    if datal>=0:
-        a[6]=datal
-    else:
-        dat=360+datal
-        a[6]=dat%256
-        a[5]=int(dat/256)
-        #print(a[6])
-    sum_check=0;
-    add_check=0;
-    for i in range(0,a[3]+4):
-        sum_check += a[i]
-        add_check += sum_check
-    a[a[3]+4] = sum_check%256
-    a[a[3]+5] = add_check%256
-    a=bytes(a)
-    return a
-#巡线偏移量信息发送
-def check_dis(datal):
-    a =[0xAA,0xFF,0xf1,0x03,0x02,0x00,0x00,0x00,0x00]
-    if datal>=0:
-        a[6]=datal
-    else:
-        a[6]=abs(datal)
-        a[5]=1
-    sum_check=0;
-    add_check=0;
-    for i in range(0,a[3]+4):
-        sum_check += a[i]
-        add_check += sum_check
-    a[a[3]+4] = sum_check%256
-    a[a[3]+5] = add_check%256
-    a=bytes(a)
-    return a
+    def check(datal):
+        a =[0xAA,0xFF,0xf1,0x03,0x00,0x00,0x00,0x00,0x00]
+        #print(a[4])
+        if datal>=0:
+            a[6]=datal
+        else:
+            dat=360+datal
+            a[6]=dat%256
+            a[5]=int(dat/256)
+            #print(a[6])
+        sum_check=0;
+        add_check=0;
+        for i in range(0,a[3]+4):
+            sum_check += a[i]
+            add_check += sum_check
+        a[a[3]+4] = sum_check%256
+        a[a[3]+5] = add_check%256
+        a=bytes(a)
+        return a
+    #巡线偏移量信息发送
+    def check_dis(datal):
+        a =[0xAA,0xFF,0xf1,0x03,0x02,0x00,0x00,0x00,0x00]
+        if datal>=0:
+            a[6]=datal
+        else:
+            a[6]=abs(datal)
+            a[5]=1
+        sum_check=0;
+        add_check=0;
+        for i in range(0,a[3]+4):
+            sum_check += a[i]
+            add_check += sum_check
+        a[a[3]+4] = sum_check%256
+        a[a[3]+5] = add_check%256
+        a=bytes(a)
+        return a
 
 #寻找竖线
-def find_stline(img2):
-    rhoo=0
-    output=0
+    def find_stline(img2):
+        rhoo=0
+        output=0
 
-    img2.binary([THRESHOLD]).invert()
-    line = img2.get_regression([(100,100)],robust = True)
-    #print(line)
-    if (line):
-        rho_err = abs(line.rho())-img2.width()/2
-        if line.theta()>90:
-            theta_err = line.theta()-180
+        img2.binary([THRESHOLD]).invert()
+        line = img2.get_regression([(100,100)],robust = True)
+        #print(line)
+        if (line):
+            rho_err = abs(line.rho())-img2.width()/2
+            if line.theta()>90:
+                theta_err = line.theta()-180
+            else:
+                theta_err = line.theta()
+            img2.draw_line(line.line(), color = 127)
+            #print(rho_err)
+
+            if line.magnitude()>8:
+                #if -40<b_err<40 and -30<t_err<30:
+                rho_output = rho_pid.get_pid(rho_err,1)
+                theta_output = theta_pid.get_pid(theta_err,1)
+                output = theta_output
+                rhoo=int(rho_output)
+                chec_dis=line_st.check_dis(rhoo)
+                uart_A.write(chec_dis)
+                print(output)#输出参数
+            else:
+
+                ouput=0
+                chec_dis=line_st.check_dis(0)
+                uart_A.write(chec_dis)
         else:
-            theta_err = line.theta()
-        theta_err = line.theta()
-        img2.draw_line(line.line(), color = 127)
-        #print(rho_err)
-
-        if line.magnitude()>8:
-            #if -40<b_err<40 and -30<t_err<30:
-            rho_output = rho_pid.get_pid(rho_err,1)
-            theta_output = theta_pid.get_pid(theta_err,1)
-            output = theta_output
-            rhoo=int(rho_output)
-            chec_dis=check_dis(rhoo)
+            chec_dis=line_st.check_dis(0)
             uart_A.write(chec_dis)
-            #print(output)#输出参数
-        else:
-
             ouput=0
-            chec_dis=check_dis(0)
-            uart_A.write(chec_dis)
-    else:
-        chec_dis=check_dis(0)
-        uart_A.write(chec_dis)
-        ouput=0#50,-50
-        pass
-    output=int(output)
-    chec=check(output)
-    print(output)
-    uart_A.write(chec)
-    lcd.display(img2)
+            pass
+        output=int(output)
+        chec=line_st.check(output)
+        uart_A.write(chec)
+        lcd.display(img2)
 
 #改变工作模式
 def change_mod():
@@ -381,7 +387,8 @@ object2=find_gan()
 object3=ultrasonic_ini()
 #声明寻点类
 object4=dot()
-
+#声明巡线类
+object5=line_st()
 #主程序
 while(True):
     img = sensor.snapshot()
@@ -392,9 +399,9 @@ while(True):
 
     if (ctrl.work_mode==0x02):#MODE2
     #寻找竖线
-        img.rotation_corr(z_rotation=180)
+        img.rotation_corr(z_rotation=0)
         img2=img.copy(roi=(112,84,80,56))
-        find_stline(img2)
+        line_st.find_stline(img2)
 
 
     if (ctrl.work_mode==0x03):#MODE3
