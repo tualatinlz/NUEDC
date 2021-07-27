@@ -579,16 +579,6 @@
               <FilePath>..\DriversMcu\TM4C123\Drivers\Drv_Uart.h</FilePath>
             </File>
             <File>
-              <FileName>Drv_Usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DriversMcu\TM4C123\Drivers\Drv_Usb.c</FilePath>
-            </File>
-            <File>
-              <FileName>Drv_Usb.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\DriversMcu\TM4C123\Drivers\Drv_Usb.h</FilePath>
-            </File>
-            <File>
               <FileName>Drv_Timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DriversMcu\TM4C123\Drivers\Drv_Timer.c</FilePath>
@@ -622,26 +612,6 @@
               <FileName>system_TM4C123.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DriversMcu\TM4C123\Libraries\src\system_TM4C123.c</FilePath>
-            </File>
-            <File>
-              <FileName>usb_serial_structs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DriversMcu\TM4C123\Libraries\src\usb_serial_structs.c</FilePath>
-            </File>
-            <File>
-              <FileName>usb_serial_structs.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\DriversMcu\TM4C123\Libraries\inc\usb_serial_structs.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Note</GroupName>
-          <Files>
-            <File>
-              <FileName>note.txt</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Doc\note.txt</FilePath>
             </File>
           </Files>
         </Group>
