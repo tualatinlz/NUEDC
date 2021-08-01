@@ -65,6 +65,7 @@ void DrvPwmOutInit(void)
 	/* 拉低所有输出 */	
 	s16 tmp[4] = {0};
 	DrvMotorPWMSet(tmp);
+	/*将舵机角度恢复至默认值*/
 	s16 tmps[4] = {125};
 	DrvServoPWMSet(tmps);
 }
