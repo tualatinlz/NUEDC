@@ -13,9 +13,7 @@ typedef struct
 	u8 mode;   //飞行程序选择
 	u8 oldmode;
   u8 update_cnt;  //数据更新计数。
-	u8 voltage_addr;
-  u8 height_addr;
-  u8 k210_addr;
+	u8 hmi_page;
 } _hmi_st;
 
 //飞控状态

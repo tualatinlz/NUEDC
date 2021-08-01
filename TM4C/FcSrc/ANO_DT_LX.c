@@ -5,19 +5,16 @@
 #include "Drv_led.h"
 #include "Drv_Uart.h"
 #include "Drv_K210.h"
+#include "Drv_HMI.h"
 #include "Drv_AnoOf.h"
 
 /*==========================================================================
- * 描述    ：凌霄飞控通信主程序
- * 更新时间：2020-01-22 
- * 作者		 ：匿名科创-茶不思
- * 官网    ：www.anotc.com
- * 淘宝    ：anotc.taobao.com
- * 技术Q群 ：190169595
- * 项目合作：18084888982，18061373080
+ * 描述    ：飞控通信主程序
+ * 更新时间：2021-07-31 
+ * 作者	   ：
 ===========================================================================*/
 
-u8 send_buffer[50]; //发送数据缓存
+u8 send_buffer[50]; //数据缓存
 _dt_st dt;
 
 //===================================================================
@@ -66,11 +63,11 @@ void ANO_DT_Init(void)
 	dt.fun[0xf2].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf3].D_Addr = 0xff;
-	dt.fun[0xf3].fre_ms = 500;	  //0 由外部触发
+	dt.fun[0xf3].fre_ms = 500;	  //定时触发
 	dt.fun[0xf3].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
 	dt.fun[0xf4].D_Addr = 0xff;
-	dt.fun[0xf4].fre_ms = 1000;	  //0 由外部触发
+	dt.fun[0xf4].fre_ms = 0;	  //0 由外部触发
 	dt.fun[0xf4].time_cnt_ms = 0; //设置初始相位，单位1ms
 }
 
@@ -170,7 +167,8 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 			send_buffer[(*_cnt)++] = BYTE0(k210.angel);
 			send_buffer[(*_cnt)++] = BYTE1(k210.angel);
 			send_buffer[(*_cnt)++] = k210.leftorright;
-			send_buffer[(*_cnt)++] = k210.offset;
+			send_buffer[(*_cnt)++] = k210.xoffset;
+			send_buffer[(*_cnt)++] = k210.yoffset;
 			send_buffer[(*_cnt)++] = BYTE0(k210.distance);
 			send_buffer[(*_cnt)++] = BYTE1(k210.distance);
 	}
@@ -186,12 +184,11 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	break;
 	case 0xf3: //
 	{
-
 	}
 	break;
-	case 0xf4: //K210指令回传
+	case 0xf4: //K210指令
 	{
-			send_buffer[(*_cnt)++] = 0;//拍照指令
+		send_buffer[(*_cnt)++] = k210.mode;//K210工作模式切换
 	}
 	break;
 	default:
@@ -251,7 +248,7 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.AC = check_sum2;
 	}
 	if(frame_num == 0xf4) ANO_DT_K210_Send_Data(send_buffer,_cnt);
-	ANO_DT_USER_Send_Data(send_buffer,_cnt);
+	//ANO_DT_USER_Send_Data(send_buffer,_cnt);
 	ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
 //===================================================================
@@ -261,37 +258,77 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 void HMI_Frame_Send(u8 target)
 {
 	u8 _cnt = 0;
+	u8 target1 = target/10 + 0x30;
+	u8 target2 = target%10 + 0x30;
 	send_buffer[_cnt++] = 0x74;
-	send_buffer[_cnt++] = target;
+	send_buffer[_cnt++] = target1;
+	send_buffer[_cnt++] = target2;
 	send_buffer[_cnt++] = 0x2E;
 	send_buffer[_cnt++] = 0x74;
 	send_buffer[_cnt++] = 0x78;
 	send_buffer[_cnt++] = 0x74;
 	send_buffer[_cnt++] = 0x3D;
 	send_buffer[_cnt++] = 0x22;
-	switch(target){
-		case 0x30:
-			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/1000+0x30;
-			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/100%10+0x30;
-			send_buffer[_cnt++] = 0x2E;
-			send_buffer[_cnt++] = fc_bat.st_data.voltage_100/10 % 10+0x30;
-			send_buffer[_cnt++] = fc_bat.st_data.voltage_100%10+0x30;
-			break;
-		case 0x31:
-			if(ext_sens.gen_dis.st_data.distance_cm<100)	send_buffer[_cnt++] = 0x20;
-			else send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/100 + 0x30;
-			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
-			send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
-			break;
-		case 0x32:send_buffer[_cnt++] = hmi.mode + 0x30;
-			break;
-		case 0x33:send_buffer[_cnt++] = k210.number+0x30;
-			break;
-		case 0x34:
-			for(int i=100;i>=1;i = i/10){
-					send_buffer[_cnt++] = ano_of.of_quality/i%10 + 0x30;
-			}
-			break;				
+	if(target1 == 0x30){
+		switch(target2){
+			case 0x30:
+				send_buffer[_cnt++] = fc_bat.st_data.voltage_100/1000+0x30;
+				send_buffer[_cnt++] = fc_bat.st_data.voltage_100/100%10+0x30;
+				send_buffer[_cnt++] = 0x2E;
+				send_buffer[_cnt++] = fc_bat.st_data.voltage_100/10 % 10+0x30;
+				send_buffer[_cnt++] = fc_bat.st_data.voltage_100%10+0x30;
+				break;
+			case 0x31:
+				if(ext_sens.gen_dis.st_data.distance_cm<100)	send_buffer[_cnt++] = 0x20;
+				else send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/100 + 0x30;
+				send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
+				send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
+				break;
+			case 0x32:send_buffer[_cnt++] = hmi.mode + 0x30;
+				break;
+			case 0x33:send_buffer[_cnt++] = k210.number+0x30;
+				break;
+			case 0x34:
+				for(int i=100;i>=1;i = i/10){
+						send_buffer[_cnt++] = ano_of.of_quality/i%10 + 0x30;
+				}
+				break;	
+			case 0x35:
+				break;		
+			case 0x36:
+				break;	
+			case 0x37:
+				break;	
+			case 0x38:
+				break;	
+			case 0x39:
+				break;	
+		}
+	//摄像头参数页
+	}
+	else if(target1 == 0x31){
+		switch(target2){
+			case 0x30:send_buffer[_cnt++] = k210.leftorright;
+				break;
+			case 0x31:send_buffer[_cnt++] = k210.xdirection;
+				break;
+			case 0x32:send_buffer[_cnt++] = k210.ydirection;;
+				break;
+			case 0x33:send_buffer[_cnt++] = k210.distance;
+				break;
+			case 0x34:send_buffer[_cnt++] = k210.mode;
+				break;	
+			case 0x35:send_buffer[_cnt++] = k210.angel;
+				break;		
+			case 0x36:send_buffer[_cnt++] = k210.xoffset;
+				break;	
+			case 0x37:send_buffer[_cnt++] = k210.yoffset;
+				break;	
+			case 0x38:send_buffer[_cnt++] = k210.number;
+				break;	
+			case 0x39:
+				break;	
+		}
 	}
 	send_buffer[_cnt++] = 0x22;
 	send_buffer[_cnt++] = 0xFF;
@@ -325,14 +362,11 @@ static void Check_To_Send(u8 frame_num)
 	if (dt.fun[frame_num].WTS)
 	{
 		dt.fun[frame_num].WTS = 0;
-		//实际发送
+		//向串口屏发送数据
 		if(frame_num == 0xf3) {
-			HMI_Frame_Send(hmi.voltage_addr);
-			HMI_Frame_Send(hmi.voltage_addr);
-			HMI_Frame_Send(hmi.height_addr);
-			HMI_Frame_Send(hmi.k210_addr);
-			HMI_Frame_Send(0x33);
-			HMI_Frame_Send(0x34);
+			for(int i = 0;i < 19;i++){
+				HMI_Frame_Send(i);
+			}
 		}
 		else Frame_Send(frame_num, &dt.fun[frame_num]);
 	}
