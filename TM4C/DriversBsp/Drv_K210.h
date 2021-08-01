@@ -9,12 +9,17 @@
 typedef struct
 {
 	//
-	u8 	number; 
-	u16 angel;			 //巡线角度
-	u8  leftorright; //左右偏移方向
-	u8  offset;			 //左右偏移量
-  u8  update_cnt;  //数据更新计数
-	u16  distance;    //激光测距输出
+	u8 	number; 			//数字识别结果
+	u16 angel;			 	//巡线角度
+	u8  leftorright; 	//自转方向
+	u8  xoffset;			 //左右偏移量
+	u8  xdirection; 	//x轴移动方向 右为0
+	u8  yoffset;			 //左右偏移量
+	u8  ydirection; 	//y轴移动方向 右为0
+  u8  update_cnt;  	//数据更新计数
+	u16  distance;    //超声波测距输出
+	u8 	mode;        	//k210工作模式选择
+	//0：  1：  2：
 } _k210_st;
 
 //飞控状态

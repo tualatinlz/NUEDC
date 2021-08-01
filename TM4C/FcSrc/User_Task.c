@@ -4,6 +4,7 @@
 #include "Drv_HMI.h"
 #include "Drv_AnoOf.h"
 #include "ANO_DT_LX.h"
+#include "Drv_PwmOut.h"
 static u16 maxcount;
 static u8 delay_flag;
 //dt.fun[0xf4].WTS = 1;
@@ -27,11 +28,11 @@ void UserTask_OneKeyCmd(void)
 		switch(hmi.mode){
 			case 0x01:FC_Lock();
 				break;
-			case 0x02:OneKey_Land();																					
+			case 0x02:OneKey_Land();
 				break;
 			case 0x03:FC_Unlock();
 				break;
-			case 0x04:UserTask_FollowLine(wholeLength);
+			case 0x04://UserTask_FollowLine(wholeLength);
 				break;
 			case 0x05:OneKey_Takeoff(100);
 				break;
@@ -53,7 +54,7 @@ void UserTask_OneKeyCmd(void)
 				break;			
 		}
 }
-//地面线循迹
+/*/地面线循迹
 void UserTask_FollowLine(u8 wholeLength){
 		static u16 counter = 0;
 		static u8 count1 = 0;
@@ -116,7 +117,7 @@ void UserTask_FollowLine(u8 wholeLength){
 		}
 	}
 }
-
+*/
 //电线巡迹
 void UserTask_FollowLineN(u8 wholeLength){
 		static u16 counter = 0;
@@ -144,7 +145,7 @@ void UserTask_FollowLineN(u8 wholeLength){
 				FC_Unlock();
 				stage = 1;
 				//起飞前等待
-				maxcount = 150;
+				maxcount = 200;
 				delay_flag = 1;
 			}
 			else if(stage == 1){
@@ -167,7 +168,7 @@ void UserTask_FollowLineN(u8 wholeLength){
 					delay_flag = 1;
 					stage  = 4;
 				}
-				else stage = 4;
+				else stage = 2;
 			}
 			else if(stage == 4){	//距离确定后向右巡线
 				//前进
@@ -179,6 +180,7 @@ void UserTask_FollowLineN(u8 wholeLength){
 			}
 			else if(stage==5){	//根据电线调整飞机高度
 				//YAW方向调整
+				Rotate(k210.leftorright,k210.angel);
 				stage = 4;
 			}
 			else if(stage==6){	//识别到条形码后
@@ -250,14 +252,15 @@ void test(u16 height,u16 dh){
 			else if(stage == 2){
 				//悬停
 				OneKey_Hang();
-				maxcount = 50;
+				maxcount = 200;
 				delay_flag = 1;
 				stage = 3;
 			}
 			else if(stage == 3){
-				rotate(50,0);
-				//count1++;
-				//if(count1 == 36) stage = 9;
+				Horizontal_Move(50,15,0);
+				maxcount = 100;
+				delay_flag = 1;
+				stage = 2;
 			}
 			else if(stage == 4){	//距离确定后向右巡线
 
@@ -327,4 +330,19 @@ void rotate(u16 r,u8 direction){
 				stage = 1;
 			}
 	}
+}
+
+//控制舵机拍照 拍一张需要调用两次
+void Take_Photos(void){
+	static u8 clicked = 0;
+	static s16 pwm[4];
+	if(clicked){
+		pwm[0]  =125;
+		clicked = 0;
+	}
+	else{
+		pwm[0] = 135;
+		clicked = 1;
+	}
+	DrvServoPWMSet(pwm);
 }

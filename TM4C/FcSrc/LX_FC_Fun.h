@@ -37,7 +37,7 @@ typedef struct
 	u8 take_off;
 	u8 in_air;
 	u8 landing;
-
+	
 } _fc_state_st;
 
 //==Êý¾ÝÉùÃ÷
@@ -64,4 +64,5 @@ u8 Right_Rotate(u16 degree, u16 velocity_degree);
 u8 Mag_Calibrate(void);
 u8 ACC_Calibrate(void);
 u8 GYR_Calibrate(void);
+u8 Rotate(u8 direction,u8 angle);
 #endif

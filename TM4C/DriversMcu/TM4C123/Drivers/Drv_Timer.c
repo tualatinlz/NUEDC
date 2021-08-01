@@ -56,19 +56,19 @@ void DrvTimerFcInit(void)
     GPIOPadConfigSet(GPIO_PORTB_BASE, GPIO_PIN_6, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
 	*/
 	//使能TIME1外设
-  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
+  //ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
 	//将Timer0A配置为32位定期计时器。
-  ROM_TimerConfigure(TIMER1_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_CAP_TIME_UP);
+  //ROM_TimerConfigure(TIMER1_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_CAP_TIME_UP);
   //配置定时器装载值
-	ROM_TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
-  ROM_TimerLoadSet(TIMER1_BASE, TIMER_A, SysCtlClockGet() / 1000);
+	//ROM_TimerControlEvent(TIMER1_BASE, TIMER_A, TIMER_EVENT_NEG_EDGE);
+  //ROM_TimerLoadSet(TIMER1_BASE, TIMER_A, SysCtlClockGet() / 1000);
 	//配置 TIMER0A 中断事件为定时器超时
-	ROM_IntPrioritySet( INT_TIMER1A , USER_INT7);
-  ROM_TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
-	TimerIntRegister(TIMER1_BASE,TIMER_A,Timer1Irq);
+	//ROM_IntPrioritySet( INT_TIMER1A , USER_INT7);
+  //ROM_TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
+	//TimerIntRegister(TIMER1_BASE,TIMER_A,Timer1Irq);
 	//使能Timer0A.
-	ROM_IntMasterEnable();
-  ROM_TimerIntEnable(TIMER1_BASE, TIMER_CAPA_EVENT);
-  ROM_IntEnable(INT_TIMER1A);
-  ROM_TimerEnable(TIMER1_BASE, TIMER_A);
+	//ROM_IntMasterEnable();
+  //ROM_TimerIntEnable(TIMER1_BASE, TIMER_CAPA_EVENT);
+  //ROM_IntEnable(INT_TIMER1A);
+  //ROM_TimerEnable(TIMER1_BASE, TIMER_A);
 }

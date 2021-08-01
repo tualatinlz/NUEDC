@@ -9,4 +9,5 @@ void UserTask_FollowLineN(u8 wholeLength);
 void test(u16 height,u16 dh);
 void delay20(void);
 void rotate(u16 r,u8 direction);
+void Take_Photos(void);
 #endif
