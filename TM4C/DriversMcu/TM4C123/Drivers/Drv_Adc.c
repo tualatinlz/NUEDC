@@ -6,7 +6,7 @@ uint32_t AdcTemp;
 static void ADC0Handler(void)
 {
 	ROM_ADCIntClear(ADC0_BASE, 0);
-    ROM_ADCSequenceDataGet(ADC0_BASE, 0, &AdcTemp);
+  ROM_ADCSequenceDataGet(ADC0_BASE, 0, &AdcTemp);
 }
 /**********************************************************************************************************
 *º¯ Êý Ãû: ADC_Init

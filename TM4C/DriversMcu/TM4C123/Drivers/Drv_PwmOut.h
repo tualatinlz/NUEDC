@@ -4,7 +4,8 @@
 #include "sysconfig.h"
 
 void DrvPwmOutInit(void);
-void DrvMotorPWMSet(int16_t pwm[8]);
+void DrvMotorPWMSet(int16_t pwm[4]);
+void DrvServoPWMSet(int16_t pwm[4]);
 void DrvHeatSet(u16 val);
 
 #endif

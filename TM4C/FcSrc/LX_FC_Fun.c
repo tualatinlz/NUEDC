@@ -111,6 +111,24 @@ u8 OneKey_Return_Home()
 	}
 }
 
+//一键悬停
+u8 OneKey_Hang()
+{
+	//
+	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
+	{
+		//按协议发送指令
+		dt.cmd_send.CID = 0X10;
+		dt.cmd_send.CMD[0] = 0X00;
+		dt.cmd_send.CMD[1] = 0X04;
+		CMD_Send(0xff, &dt.cmd_send);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 //一键起飞(高度cm)
 u8 OneKey_Takeoff(u16 height_cm)
 {
@@ -124,6 +142,7 @@ u8 OneKey_Takeoff(u16 height_cm)
 		dt.cmd_send.CMD[2] = BYTE0(height_cm);
 		dt.cmd_send.CMD[3] = BYTE1(height_cm);
 		CMD_Send(0xff, &dt.cmd_send);
+		fc_sta.take_off = 1;
 		return 1;
 	}
 	else
@@ -142,6 +161,7 @@ u8 OneKey_Land()
 		dt.cmd_send.CMD[0] = 0X00;
 		dt.cmd_send.CMD[1] = 0X06;
 		CMD_Send(0xff, &dt.cmd_send);
+		fc_sta.take_off = 0;
 		return 1;
 	}
 	else
@@ -152,6 +172,7 @@ u8 OneKey_Land()
 //平移(距离cm，速度cmps，方向角度0-360度)
 u8 Horizontal_Move(u16 distance_cm, u16 velocity_cmps, u16 dir_angle_0_360)
 {
+	if(velocity_cmps < 10) velocity_cmps = 10;
 	//
 	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
 	{
@@ -204,6 +225,7 @@ u8 Vertical_Target(u32 height_cm)
 //上升(距离cm，速度cms)
 u8 Vertical_Up(u16 distance_cm, u16 velocity_cm)
 {
+	if(velocity_cm < 10) velocity_cm = 10;
 	//
 	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
 	{
@@ -229,6 +251,7 @@ u8 Vertical_Up(u16 distance_cm, u16 velocity_cm)
 //下降(距离cm，速度cms 最小速度10)
 u8 Vertical_Down(u16 distance_cm, u16 velocity_cm)
 {
+	if(velocity_cm < 10) velocity_cm = 10;
 	//
 	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
 	{
@@ -254,6 +277,7 @@ u8 Vertical_Down(u16 distance_cm, u16 velocity_cm)
 //左转(角度deg，角速度degs)
 u8 Left_Rotate(u16 degree, u16 velocity_degree)
 {
+	if(velocity_degree <5) velocity_degree = 5;
 	//
 	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
 	{
@@ -281,6 +305,7 @@ u8 Left_Rotate(u16 degree, u16 velocity_degree)
 u8 Right_Rotate(u16 degree, u16 velocity_degree)
 {
 	//
+	if(velocity_degree <5) velocity_degree = 5;
 	if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
 	{
 		//按协议发送指令
@@ -377,4 +402,9 @@ u8 GYR_Calibrate()
 	{
 		return 0;
 	}
+}
+//旋转函数,0为顺时针
+u8 Rotate(u8 direction,u8 angle){
+	if(direction) Right_Rotate(angle,angle);
+	else Left_Rotate(angle,angle);
 }

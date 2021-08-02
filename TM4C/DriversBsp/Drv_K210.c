@@ -50,6 +50,7 @@ void K210_GetOneByte(uint8_t data)
 		rxstate = 0;
 		_datatemp[4 + _data_cnt] = data;
 		K210_DataAnl(_datatemp, _data_cnt + 5); //
+		dt.fun[0xf1].WTS = 1;
 	}
 	else
 	{
@@ -80,23 +81,28 @@ static void K210_DataAnl(uint8_t *data, uint8_t len)
 			k210.angel = *(data + 5)<<8 | *(data + 6);
 			k210.update_cnt++;
 		}
-		else if (*(data + 4) == 1) //识别数字
+		else if (*(data + 4) == 1) //识别数字(神经网络)
 		{
 			k210.number = *(data + 5);
 			k210.update_cnt++;
 		}
 		else if (*(data + 4) == 2) //左右位置传输
 		{
-			k210.leftorright = *(data + 5);
-			k210.offset = *(data + 6);
+			k210.leftorright = *(data + 5); //左为1，右为0
+			k210.xoffset = *(data + 6);
 			k210.update_cnt++;
 		}
-		else if (*(data + 4) == 3) //激光测距传输
+		else if (*(data + 4) == 3) //超声波测距传输
 		{
 			k210.distance = *(data + 5)<<8 | *(data + 6);
 			k210.distance = k210.distance/10;
 			k210.update_cnt++;
-			dt.fun[0xf1].WTS = 1;
+		}
+		else if (*(data + 4) == 4) //电线杆左右偏移量
+		{
+			k210.xoffset = *(data + 5)<<8 | *(data + 6);
+			k210.distance = k210.distance/10;
+			k210.update_cnt++;
 		}
 	}
 }

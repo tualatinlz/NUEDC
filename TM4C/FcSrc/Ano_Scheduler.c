@@ -7,6 +7,8 @@
 **********************************************************************************/
 #include "Ano_Scheduler.h"
 #include "User_Task.h"
+#include "Drv_AnoOf.h"
+#include "LX_FC_Fun.h"
 //////////////////////////////////////////////////////////////////////
 //用户程序调度器
 //////////////////////////////////////////////////////////////////////
@@ -14,7 +16,7 @@
 static void Loop_1000Hz(void) //1ms执行一次
 {
 	//////////////////////////////////////////////////////////////////////
-
+	
 	//////////////////////////////////////////////////////////////////////
 }
 
@@ -53,9 +55,13 @@ static void Loop_20Hz(void) //50ms执行一次
 	//////////////////////////////////////////////////////////////////////
 }
 
-static void Loop_2Hz(void) //500ms执行一次
+static void Loop_2Hz(void) //500ms执行一次，固定飞机高度
 {
-	//UserTask_OneKeyCm();
+	u8 targetHeight = 100;
+	if(fc_sta.take_off){
+		if(ano_of.of_alt_cm - targetHeight > 5) Vertical_Down(ano_of.of_alt_cm - targetHeight,5);
+		else if (targetHeight - ano_of.of_alt_cm < 5) Vertical_Up(targetHeight - ano_of.of_alt_cm,5);
+	}
 }
 //////////////////////////////////////////////////////////////////////
 //调度器初始化

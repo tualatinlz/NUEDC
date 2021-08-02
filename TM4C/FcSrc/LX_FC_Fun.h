@@ -37,7 +37,7 @@ typedef struct
 	u8 take_off;
 	u8 in_air;
 	u8 landing;
-
+	
 } _fc_state_st;
 
 //==Êý¾ÝÉùÃ÷
@@ -49,6 +49,7 @@ extern _fc_state_st fc_sta;
 u8 FC_Unlock(void);
 u8 FC_Lock(void);
 u8 LX_Change_Mode(u8 new_mode);
+u8 OneKey_Hang(void);
 u8 OneKey_Takeoff(u16 height_cm);
 u8 OneKey_Land(void);
 u8 OneKey_Flip(void);
@@ -63,4 +64,5 @@ u8 Right_Rotate(u16 degree, u16 velocity_degree);
 u8 Mag_Calibrate(void);
 u8 ACC_Calibrate(void);
 u8 GYR_Calibrate(void);
+u8 Rotate(u8 direction,u8 angle);
 #endif

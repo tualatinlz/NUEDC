@@ -5,8 +5,8 @@ void DvrLedInit(void)
 {
 	ROM_SysCtlPeripheralEnable(LED1_SYSCTL);
 	ROM_SysCtlPeripheralEnable(LED2_SYSCTL);
-    ROM_SysCtlPeripheralEnable(LED3_SYSCTL);
-    ROM_SysCtlPeripheralEnable(LEDS_SYSCTL);
+  ROM_SysCtlPeripheralEnable(LED3_SYSCTL);
+  ROM_SysCtlPeripheralEnable(LEDS_SYSCTL);
 	ROM_GPIOPinTypeGPIOOutput(LED1_PORT, LED1_PIN);
 	ROM_GPIOPinTypeGPIOOutput(LED2_PORT, LED2_PIN);
 	ROM_GPIOPinTypeGPIOOutput(LED3_PORT, LED3_PIN);
@@ -37,6 +37,7 @@ void DrvLedOnOff(u16 sta)
 }
 
 _led_st led;
+
 void LED_1ms_DRV() //
 {
 	static u16 led_cnt[LED_NUM];
