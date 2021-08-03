@@ -24,8 +24,8 @@ u8 All_Init()
 	//初始化电调输出功能
 	DrvPwmOutInit();
 	MyDelayMs(100);
-	//接数传，后期接HMI
-	DrvUart1Init(115200);
+	//接HMI串口屏
+	DrvUart1Init(250000);
 	//串口2初始化 EY4600
 	DrvUart2Init(115200);
 	//串口3初始化 K210

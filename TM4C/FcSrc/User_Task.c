@@ -7,9 +7,8 @@
 #include "Drv_PwmOut.h"
 static u16 maxcount;
 static u8 delay_flag;
-//dt.fun[0xf4].WTS = 1;
 
-//一级延迟函数
+//一级延迟函数 一次延迟20ms
 void delay20(){
 	static u16 count = 0;
 	if(count <= maxcount) count++;
@@ -17,6 +16,7 @@ void delay20(){
 		maxcount = 0;
 		delay_flag = 0;
 		count = 0;
+		fc_sta.rotating = 0;
 	}
 }
 //主函数 包括不同模式
@@ -32,13 +32,13 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x03:FC_Unlock();
 				break;
-			case 0x04://UserTask_FollowLine(wholeLength);
+			case 0x04:UserTask_FollowLineN(wholeLength);
 				break;
-			case 0x05:OneKey_Takeoff(100);
+			case 0x05:test(100,0);
 				break;
-			case 0x06:test(100,0);
+			case 0x06:
 				break;
-			case 0x07:UserTask_FollowLineN(wholeLength);
+			case 0x07:
 				break;
 			case 0x10:Horizontal_Calibrate();
 								hmi.mode = 0;
@@ -155,22 +155,21 @@ void UserTask_FollowLineN(u8 wholeLength){
 				delay_flag = 1;
 			}
 			else if(stage == 2){
-				//前进
-				Horizontal_Move(distance,velocity,90);			
+				//前后位置
+				Horizontal_Move(k210.yoffset,velocity,k210.ydirection*180);			
 				maxcount = distance * 50 / velocity;
 				delay_flag = 1;
 				stage = 3;
 			}
 			else if(stage == 3){
-				if(k210.distance <= 100 && k210.distance>70){
-					Horizontal_Move(k210.distance-70,velocity,0);
-					maxcount = (k210.distance-70) / velocity;
-					delay_flag = 1;
-					stage  = 4;
-				}
-				else stage = 2;
+				//左右位置
+				Horizontal_Move(k210.xoffset,velocity,k210.xdirection*180 + 90);			
+				maxcount = distance * 50 / velocity;
+				delay_flag = 1;
+				stage = 2;
+				counter ++;
 			}
-			else if(stage == 4){	//距离确定后向右巡线
+			else if(stage == 4){
 				//前进
 				Horizontal_Move(distance,velocity,90);			
 				maxcount = distance * 50 / velocity;
@@ -183,25 +182,83 @@ void UserTask_FollowLineN(u8 wholeLength){
 				Rotate(k210.leftorright,k210.angel);
 				stage = 4;
 			}
-			else if(stage==6){	//识别到条形码后
-				//悬停并拍照			
-				stage = 7;
-			}
-			else if(stage == 7){	//距离确定后向右巡线
-				//前进
-				Horizontal_Move(distance,velocity,90);			
-				maxcount = distance * 50 / velocity;
+
+		//超时降落
+		if(counter >= maxcnt){
+			OneKey_Land();
+			counter = 0;
+			stage = 0;
+			hmi.mode = 0;
+		}
+	}
+}
+
+
+void solveMaze(u8 height){
+		static u16 counter = 0;
+		u16 maxcnt = 3000;        //60秒降落 防止意外
+		static u8 count1 = 0;
+		static u8 stage = 0;			//流程执行阶段
+		u8 distance = 20;				  //每次移动的距离
+		u8 velocity = 10;	        //移动速度 最小10cm/s
+		u8 targetHeight = height;
+		LX_Change_Mode(3);
+		counter ++;
+		//切换状态时清除局部变量
+		if(hmi.mode != hmi.oldmode){
+			counter = 0;
+			stage = 0;
+			count1 = 0;	
+			hmi.oldmode = hmi.mode;
+		}
+		//非阻塞延迟 一次20ms
+		if(delay_flag){
+			delay20();
+		}
+		else{
+			if(stage == 0){
+				FC_Unlock();
+				stage = 1;
+				//起飞前等待4秒
+				maxcount = 200;
 				delay_flag = 1;
-				stage = 8;
-				//if(k210.distance < 100) stage = 9; //到达另一个杆子的位置		
 			}
-			else if(stage==8){	//根据电线调整飞机高度
-				//YAW方向调整 同stage5
-				stage = 7;
+			else if(stage == 1){
+				OneKey_Takeoff(targetHeight);
+				stage = 2;
+				maxcount = 150;
+				delay_flag = 1;
 			}
-			else if(stage==9){	//绕杆
-				//高度调整			
-				//rotate(50,0); //纯旋转
+			else if(stage == 2){
+				//稳定悬停
+				OneKey_Hang();
+				maxcount = 50;
+				delay_flag = 1;
+				stage = 3;
+			}
+			else if(stage == 3){
+
+			}
+			else if(stage == 4){	
+
+			}
+			else if(stage==5){	
+
+			}
+			else if(stage==6){	
+
+			}
+			else if(stage==7){	
+
+			}
+			else if(stage==8){	
+
+			}
+			else if(stage==9){
+				OneKey_Land();
+				counter = 0;
+				stage = 0;
+				hmi.mode = 0;
 			}
 			 
 		//超时降落

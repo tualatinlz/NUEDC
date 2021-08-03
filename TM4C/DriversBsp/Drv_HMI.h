@@ -13,7 +13,7 @@ typedef struct
 	u8 mode;   //飞行程序选择
 	u8 oldmode;
   u8 update_cnt;  //数据更新计数。
-	u8 hmi_page;
+	u8 page;
 } _hmi_st;
 
 //飞控状态

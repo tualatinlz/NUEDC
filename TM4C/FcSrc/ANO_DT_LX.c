@@ -6,6 +6,7 @@
 #include "Drv_Uart.h"
 #include "Drv_K210.h"
 #include "Drv_HMI.h"
+#include "Drv_HWT101.h"
 #include "Drv_AnoOf.h"
 
 /*==========================================================================
@@ -29,6 +30,10 @@ void ANO_DT_Init(void)
 	dt.fun[0x40].D_Addr = 0xff;
 	dt.fun[0x40].fre_ms = 20;
 	dt.fun[0x40].time_cnt_ms = 0; 
+	//串口屏
+	dt.fun[0xf3].D_Addr = 0xff;
+	dt.fun[0xf3].fre_ms = 1000;	  //定时触发
+	dt.fun[0xf3].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//========外部触发
 	dt.fun[0x30].D_Addr = 0xff;
 	dt.fun[0x30].fre_ms = 0;	  	//0 由外部触发
@@ -62,13 +67,13 @@ void ANO_DT_Init(void)
 	dt.fun[0xf2].fre_ms = 0;	  //0 由外部触发
 	dt.fun[0xf2].time_cnt_ms = 0; //设置初始相位，单位1ms
 	//
-	dt.fun[0xf3].D_Addr = 0xff;
-	dt.fun[0xf3].fre_ms = 500;	  //定时触发
-	dt.fun[0xf3].time_cnt_ms = 0; //设置初始相位，单位1ms
-	//
 	dt.fun[0xf4].D_Addr = 0xff;
 	dt.fun[0xf4].fre_ms = 0;	  //0 由外部触发
 	dt.fun[0xf4].time_cnt_ms = 0; //设置初始相位，单位1ms
+	
+	dt.fun[0xf5].D_Addr = 0xff;
+	dt.fun[0xf5].fre_ms = 0;	  //0 由外部触发
+	dt.fun[0xf5].time_cnt_ms = 0; //设置初始相位，单位1ms
 }
 
 //===================================================================
@@ -162,7 +167,6 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	break;
 	case 0xf1: //K210参数传递
 	{
-		//
 			send_buffer[(*_cnt)++] = k210.number;
 			send_buffer[(*_cnt)++] = BYTE0(k210.angel);
 			send_buffer[(*_cnt)++] = BYTE1(k210.angel);
@@ -175,20 +179,29 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	break;
 	case 0xf2: //EY4600参数传递
 	{
-		//
 		for (u8 i = 0; i < 8; i++)
 		{
 			send_buffer[(*_cnt)++] = ey4600.rawdata[i];
 		}
 	}
 	break;
-	case 0xf3: //
+	case 0xf3: //串口屏参数显示 独立函数
 	{
 	}
 	break;
-	case 0xf4: //K210指令
+	case 0xf4: //K210模式指令
 	{
 		send_buffer[(*_cnt)++] = k210.mode;//K210工作模式切换
+	}
+	break;
+	case 0xf5: //K210参数指令
+	{
+		send_buffer[(*_cnt)++] = k210.l1;//L
+		send_buffer[(*_cnt)++] = k210.l2;//L
+		send_buffer[(*_cnt)++] = k210.a1;//A
+		send_buffer[(*_cnt)++] = k210.a2;//A
+		send_buffer[(*_cnt)++] = k210.b1;//B
+		send_buffer[(*_cnt)++] = k210.b2;//B
 	}
 	break;
 	default:
@@ -210,10 +223,11 @@ void ANO_LX_Data_Exchange_Task(float dT_s)
 	Check_To_Send(0xe0);
 	Check_To_Send(0xe2);
 	Check_To_Send(0x0d);
-	Check_To_Send(0xf1);
-	Check_To_Send(0xf2);
+	//Check_To_Send(0xf1);
+	//Check_To_Send(0xf2);
 	Check_To_Send(0xf3);
 	Check_To_Send(0xf4);
+	Check_To_Send(0xf5);
 }
 
 //===================================================================
@@ -247,9 +261,9 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.SC = check_sum1;
 		dt.ck_back.AC = check_sum2;
 	}
-	if(frame_num == 0xf4) ANO_DT_K210_Send_Data(send_buffer,_cnt);
+	if(frame_num == 0xf4 || frame_num == 0xf5) ANO_DT_K210_Send_Data(send_buffer,_cnt);
 	//ANO_DT_USER_Send_Data(send_buffer,_cnt);
-	ANO_DT_LX_Send_Data(send_buffer, _cnt);
+	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
 //===================================================================
 //
@@ -294,6 +308,9 @@ void HMI_Frame_Send(u8 target)
 				}
 				break;	
 			case 0x35:
+				for(int i=100;i>=1;i = i/10){
+					send_buffer[_cnt++] = hwt101.angel/i%10 + 0x30;
+				}
 				break;		
 			case 0x36:
 				break;	
@@ -303,31 +320,44 @@ void HMI_Frame_Send(u8 target)
 				break;	
 			case 0x39:
 				break;	
+			default:
+				break;
 		}
 	//摄像头参数页
 	}
 	else if(target1 == 0x31){
 		switch(target2){
-			case 0x30:send_buffer[_cnt++] = k210.leftorright;
+			case 0x30:send_buffer[_cnt++] = k210.leftorright + 0x30;
 				break;
-			case 0x31:send_buffer[_cnt++] = k210.xdirection;
+			case 0x31:send_buffer[_cnt++] = k210.xdirection + 0x30;
 				break;
-			case 0x32:send_buffer[_cnt++] = k210.ydirection;;
+			case 0x32:send_buffer[_cnt++] = k210.ydirection + 0x30;
 				break;
-			case 0x33:send_buffer[_cnt++] = k210.distance;
+			case 0x33:send_buffer[_cnt++] = k210.distance + 0x30;
 				break;
-			case 0x34:send_buffer[_cnt++] = k210.mode;
+			case 0x34:send_buffer[_cnt++] = k210.mode + 0x30;
 				break;	
-			case 0x35:send_buffer[_cnt++] = k210.angel;
+			case 0x35:
+				for(int i=100;i>=1;i = i/10){
+					send_buffer[_cnt++] = k210.angel/i%10 + 0x30;
+				}
 				break;		
-			case 0x36:send_buffer[_cnt++] = k210.xoffset;
+			case 0x36:
+				for(int i=100;i>=1;i = i/10){
+					send_buffer[_cnt++] = k210.xoffset/i%10 + 0x30;
+				}
 				break;	
-			case 0x37:send_buffer[_cnt++] = k210.yoffset;
+			case 0x37:
+				for(int i=100;i>=1;i = i/10){
+					send_buffer[_cnt++] = k210.yoffset/i%10 + 0x30;
+				}
 				break;	
-			case 0x38:send_buffer[_cnt++] = k210.number;
+			case 0x38:send_buffer[_cnt++] = k210.number + 0x30;
 				break;	
 			case 0x39:
 				break;	
+			default:
+				break;
 		}
 	}
 	send_buffer[_cnt++] = 0x22;
@@ -340,10 +370,8 @@ void HMI_Frame_Send(u8 target)
 
 static void Check_To_Send(u8 frame_num)
 {
-	//
 	if (dt.fun[frame_num].fre_ms)
 	{
-		//
 		if (dt.fun[frame_num].time_cnt_ms < dt.fun[frame_num].fre_ms)
 		{
 			dt.fun[frame_num].time_cnt_ms++;
@@ -358,13 +386,12 @@ static void Check_To_Send(u8 frame_num)
 	{
 		//等待外部触发
 	}
-	//
 	if (dt.fun[frame_num].WTS)
 	{
 		dt.fun[frame_num].WTS = 0;
 		//向串口屏发送数据
 		if(frame_num == 0xf3) {
-			for(int i = 0;i < 19;i++){
+			for(int i = hmi.page * 10;i < hmi.page * 10 + 10;i++){
 				HMI_Frame_Send(i);
 			}
 		}
@@ -373,22 +400,19 @@ static void Check_To_Send(u8 frame_num)
 }
 
 //===================================================================
-//数据发送接口
+//向IMU(串口5)发送数据
 static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length)
 {
-	//
 	UartSendLXIMU(dataToSend, length);
 }
-
+//向串口屏(串口1)发送数据
 static void ANO_DT_USER_Send_Data(u8 *dataToSend, u8 length)
 {
-	//
 	UartSendUser(dataToSend, length);
 }
-
+//向K210(串口3)发送数据
 static void ANO_DT_K210_Send_Data(u8 *dataToSend, u8 length)
 {
-	//
 	UartSendK210(dataToSend, length);
 }
 

@@ -54,6 +54,7 @@ u8 FC_Lock()
 		dt.cmd_send.CMD[0] = 0x00;
 		dt.cmd_send.CMD[1] = 0x02;
 		CMD_Send(0XFF, &dt.cmd_send);
+		fc_sta.take_off = 0;
 		return 1;
 	}
 	else
@@ -292,6 +293,7 @@ u8 Left_Rotate(u16 degree, u16 velocity_degree)
 		dt.cmd_send.CMD[5] = BYTE1(velocity_degree);
 		//
 		CMD_Send(0xff, &dt.cmd_send);
+		fc_sta.rotating = 1;
 		return 1;
 	}
 	else
@@ -319,6 +321,7 @@ u8 Right_Rotate(u16 degree, u16 velocity_degree)
 		dt.cmd_send.CMD[5] = BYTE1(velocity_degree);
 		//
 		CMD_Send(0xff, &dt.cmd_send);
+		fc_sta.rotating = 1;
 		return 1;
 	}
 	else
@@ -407,4 +410,5 @@ u8 GYR_Calibrate()
 u8 Rotate(u8 direction,u8 angle){
 	if(direction) Right_Rotate(angle,angle);
 	else Left_Rotate(angle,angle);
+	return 1;
 }

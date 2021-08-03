@@ -59,8 +59,11 @@ static void Loop_2Hz(void) //500ms执行一次，固定飞机高度
 {
 	u8 targetHeight = 100;
 	if(fc_sta.take_off){
+		//高度稳定
 		if(ano_of.of_alt_cm - targetHeight > 5) Vertical_Down(ano_of.of_alt_cm - targetHeight,5);
 		else if (targetHeight - ano_of.of_alt_cm < 5) Vertical_Up(targetHeight - ano_of.of_alt_cm,5);
+		//航向稳定
+		if(fc_sta.rotating == 0);
 	}
 }
 //////////////////////////////////////////////////////////////////////

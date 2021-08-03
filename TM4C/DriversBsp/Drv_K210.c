@@ -76,20 +76,22 @@ static void K210_DataAnl(uint8_t *data, uint8_t len)
 
 	if (*(data + 2) == 0XF1)
 	{
-		if (*(data + 4) == 0) //巡线角度
+		if (*(data + 4) == 0) //巡线转向及角度
 		{
-			k210.angel = *(data + 5)<<8 | *(data + 6);
+			k210.leftorright = *(data + 5);
+			k210.angel = *(data + 6);
 			k210.update_cnt++;
 		}
-		else if (*(data + 4) == 1) //识别数字(神经网络)
+		else if (*(data + 4) == 1) //x轴方向及偏移量
 		{
-			k210.number = *(data + 5);
+			k210.xdirection = *(data + 5);
+			k210.xoffset = *(data + 6)<<8 | *(data + 7);
 			k210.update_cnt++;
 		}
-		else if (*(data + 4) == 2) //左右位置传输
+		else if (*(data + 4) == 2) //y轴方向及偏移量
 		{
-			k210.leftorright = *(data + 5); //左为1，右为0
-			k210.xoffset = *(data + 6);
+			k210.ydirection = *(data + 5);
+			k210.yoffset = *(data + 6)<<8 | *(data + 7);
 			k210.update_cnt++;
 		}
 		else if (*(data + 4) == 3) //超声波测距传输
@@ -98,11 +100,9 @@ static void K210_DataAnl(uint8_t *data, uint8_t len)
 			k210.distance = k210.distance/10;
 			k210.update_cnt++;
 		}
-		else if (*(data + 4) == 4) //电线杆左右偏移量
+		else if (*(data + 4) == 4) //数字识别
 		{
-			k210.xoffset = *(data + 5)<<8 | *(data + 6);
-			k210.distance = k210.distance/10;
-			k210.update_cnt++;
+			k210.number = *(data + 5);
 		}
 	}
 }

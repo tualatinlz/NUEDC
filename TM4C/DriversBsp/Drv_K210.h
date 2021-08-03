@@ -18,14 +18,24 @@ typedef struct
 	u8  ydirection; 	//y轴移动方向 右为0
   u8  update_cnt;  	//数据更新计数
 	u16  distance;    //超声波测距输出
-	u8 	mode;        	//k210工作模式选择
-	//0：  1：  2：
 } _k210_st;
 
-//飞控状态
+typedef struct
+{
+	u8 	mode;        	//k210工作模式选择
+	//0：  1：  2：
+	u8  l1;
+	u8  l2;
+	u8 	a1;
+	u8 	a2;
+	u8 	b1;
+	u8 	b2;
+} _k210_config;
+//状态
 
 //==数据声明
 extern _k210_st k210;
+extern _k210_config k210_cfg;
 //==函数声明
 //static
 static void K210_DataAnl(uint8_t *data_buf, uint8_t num);

@@ -31,4 +31,4 @@ int main(void)
 		Scheduler_Run();
 	}
 }
-/******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/
+/***************END OF FILE************/

@@ -36,6 +36,7 @@ typedef struct
 	u8 imu_ready;
 	u8 take_off;
 	u8 in_air;
+	u8 rotating;
 	u8 landing;
 	
 } _fc_state_st;
