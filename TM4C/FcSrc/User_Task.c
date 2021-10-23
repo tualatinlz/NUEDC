@@ -27,14 +27,17 @@ void UserTask_OneKeyCmd(void)
 		LX_Change_Mode(3);
 		switch(hmi.mode){
 			case 0x01:FC_Lock();
+			hmi.mode = 0;
 				break;
 			case 0x02:OneKey_Land();
+			hmi.mode = 0;
 				break;
 			case 0x03:FC_Unlock();
+			hmi.mode = 0;
 				break;
 			case 0x04:solveMaze(80);
 				break;
-			case 0x05:test(100,0);
+			case 0x05:goMaze(80);
 				break;
 			case 0x06:
 				break;
@@ -54,157 +57,18 @@ void UserTask_OneKeyCmd(void)
 				break;			
 		}
 }
-/*/地面线循迹
-void UserTask_FollowLine(u8 wholeLength){
-		static u16 counter = 0;
-		static u8 count1 = 0;
-		static u8 stage = 0;			//流程执行阶段
-		u8 distance = 2;					//每次移动的距离
-		u8 velocity = 15;					//移动速度 最小10cm/s
-		u8 targetHeight = 100;
-		u16 maxcnt = 50000; 
-		LX_Change_Mode(3);
-		
-		//切换状态时清除局部变量
-		if(hmi.mode != hmi.oldmode){
-			counter = 0;
-			stage = 0;
-			count1 = 0;	
-			hmi.oldmode = hmi.mode;
-		}
-		//非阻塞延迟 一次20ms
-		if(delay_flag){
-			delay20();
-		}
-		else{
-			if(stage == 0){
-				FC_Unlock();
-				count1++;
-			if(count1>=150){
-				stage = 1;
-				count1=0;
-			}
-		}
-		else if(stage == 1){
-			OneKey_Takeoff(targetHeight);
-			stage = 2;
-		}
-		else if(stage == 2){
-			//高度调节
-			if(ano_of.of_alt_cm>targetHeight + 3) Vertical_Down(ano_of.of_alt_cm-targetHeight,10);
-			else if(ano_of.of_alt_cm<targetHeight - 3) Vertical_Up(targetHeight-ano_of.of_alt_cm,10);
-			else{	
-				//拐弯角度调整
-				if(k210.angel >180 && k210.angel<357)Left_Rotate(360-k210.angel,30);
-				else if(k210.angel<180 && k210.angel>3) Right_Rotate(k210.angel,30); 
-				//左右位置调整
-				if(k210.offset/2 > 3)	Horizontal_Move(k210.offset/2,velocity,k210.leftorright*180+90);
-				else counter++;
-				//前进
-				Horizontal_Move(distance,velocity,0);
-				//识别指定数字降落
-				if(k210.number == 3) stage = 3;
-			}
-		}
-		else if(stage==3){
-			OneKey_Land();
-			counter = 0;
-			stage = 0;
-			hmi.mode = 0;
-		}
-		if(counter >= maxcnt){
-			stage=3;
-		}
-	}
-}
-*/
-//电线巡迹
-void UserTask_FollowLineN(u8 wholeLength){
-		static u16 counter = 0;
-		u16 maxcnt = 50000; 
-		static u8 count1 = 0;
-		static u8 stage = 0;			//流程执行阶段
-		u8 distance = 20;				  //每次移动的距离
-		u8 velocity = 10;	        //移动速度 最小10cm/s
-		u8 targetHeight = 100;
-		LX_Change_Mode(3);
-		
-		//切换状态时清除局部变量
-		if(hmi.mode != hmi.oldmode){
-			counter = 0;
-			stage = 0;
-			count1 = 0;	
-			hmi.oldmode = hmi.mode;
-		}
-		//非阻塞延迟 一次20ms
-		if(delay_flag){
-			delay20();
-		}
-		else{
-			if(stage == 0){
-				FC_Unlock();
-				stage = 1;
-				//起飞前等待
-				maxcount = 200;
-				delay_flag = 1;
-			}
-			else if(stage == 1){
-				OneKey_Takeoff(targetHeight);
-				stage = 2;
-				maxcount = 100;
-				delay_flag = 1;
-			}
-			else if(stage == 2){
-				//前后位置
-				Horizontal_Move(k210.yoffset,velocity,k210.ydirection*180);			
-				maxcount = distance * 50 / velocity;
-				delay_flag = 1;
-				stage = 3;
-			}
-			else if(stage == 3){
-				//左右位置
-				Horizontal_Move(k210.xoffset,velocity,k210.xdirection*180 + 90);			
-				maxcount = distance * 50 / velocity;
-				delay_flag = 1;
-				stage = 2;
-				counter ++;
-			}
-			else if(stage == 4){
-				//前进
-				Horizontal_Move(distance,velocity,90);			
-				maxcount = distance * 50 / velocity;
-				delay_flag = 1;
-				stage = 5;
-				//if(k210.barcode == 1) stage = 6; //识别到二维码			
-			}
-			else if(stage==5){	//根据电线调整飞机高度
-				//YAW方向调整
-				Rotate(k210.leftorright,k210.angel);
-				stage = 4;
-			}
-
-		//超时降落
-		if(counter >= maxcnt){
-			OneKey_Land();
-			counter = 0;
-			stage = 0;
-			hmi.mode = 0;
-		}
-	}
-}
-
-
 
 void solveMaze(u8 height){
 		static u16 counter = 0;
-		u16 maxcnt = 3000;        //60秒降落 防止意外
+		counter ++;
+		u16 maxcnt = 6000;        //120秒降落 防止意外
 		static u8 count1 = 0;
 		static u8 stage = 0;			//流程执行阶段
-		u8 distance = 20;				  //每次移动的距离
-		u8 velocity = 10;	        //移动速度 最小10cm/s
+		u8 blockLength = 40;			//格子边长
+		u8 velocity = 20;	        //移动速度 最小10cm/s
 		u8 targetHeight = height;
 		LX_Change_Mode(3);
-		counter ++;
+		
 		//切换状态时清除局部变量
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
@@ -231,31 +95,202 @@ void solveMaze(u8 height){
 				delay_flag = 1;
 			}
 			else if(stage == 2){
-				//稳定悬停
-				OneKey_Hang();
-				maxcount = 50;
-				delay_flag = 1;
+				Horizontal_Move(3.5*blockLength,velocity,0);
 				stage = 3;
+				maxcount = 350;
+				delay_flag = 1;
 			}
 			else if(stage == 3){
-
+				Horizontal_Move(2.5*blockLength,velocity,90);
+				k210_cfg.mode = 1;
+				stage = 4;
+				maxcount = 250;
+				delay_flag = 1;
 			}
 			else if(stage == 4){	
-
+				//等待
+				dt.fun[0xf4].WTS = 1;
+				if(k210_cfg.mode == 0) stage = 5;
+				maxcount = 50;
+				delay_flag = 1;
 			}
 			else if(stage==5){	
-
+				Horizontal_Move(2.5*blockLength,velocity,270);
+				stage = 6;
+				maxcount = 250;
+				delay_flag = 1;
 			}
 			else if(stage==6){	
-
+				Horizontal_Move(3.5*blockLength,velocity,180);
+				k210_cfg.mode = 2;
+				stage = 7;
+				maxcount = 350;
+				delay_flag = 1;
 			}
 			else if(stage==7){	
-
+				dt.fun[0xf4].WTS = 1;
+				stage = 8;
+				maxcnt = 30;
+				delay_flag = 1;
 			}
 			else if(stage==8){	
-
+				Horizontal_Move(blockLength * k210.xoffset,velocity,k210.xdirection*180 + 90);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 9;				
 			}
 			else if(stage==9){
+				Horizontal_Move(blockLength * k210.yoffset,velocity,k210.ydirection*180);
+				maxcnt = k210.yoffset * 100;
+				delay_flag = 1;
+				k210.yoffset = 0;
+				k210.ydirection = 0;
+				if(k210_cfg.mode == 0) stage = 10;
+				else stage = 7;		
+			}
+			else if(stage == 10){
+				OneKey_Land();
+				counter = 0;
+				stage = 0;
+				hmi.mode = 0;
+			}
+			 
+		//超时降落
+		if(counter >= maxcnt){
+			OneKey_Land();
+			counter = 0;
+			stage = 0;
+			hmi.mode = 0;
+		}
+	}
+}
+
+void goMaze(u8 height){
+		static u16 counter = 0;
+		counter ++;
+		u16 maxcnt = 6000;        //120秒降落 防止意外
+		static u8 count1 = 0;
+		static u8 stage = 0;			//流程执行阶段
+		u8 blockLength = 40;			//格子边长
+		u8 velocity = 20;	        //移动速度 最小10cm/s
+		u8 targetHeight = height;
+		LX_Change_Mode(3);
+		
+		//切换状态时清除局部变量
+		if(hmi.mode != hmi.oldmode){
+			counter = 0;
+			stage = 0;
+			count1 = 0;	
+			hmi.oldmode = hmi.mode;
+		}
+		//非阻塞延迟 一次20ms
+		if(delay_flag){
+			delay20();
+		}
+		else{
+			if(stage == 0){
+				FC_Unlock();
+				stage = 1;
+				//起飞前等待4秒
+				maxcount = 200;
+				delay_flag = 1;
+			}
+			else if(stage == 1){
+				OneKey_Takeoff(targetHeight);
+				stage = 2;
+				maxcount = 150;
+				delay_flag = 1;
+			}
+			else if(stage == 2){
+				Horizontal_Move(3.5*blockLength,velocity,0);
+				stage = 3;
+				maxcount = 350;
+				delay_flag = 1;
+			}
+			else if(stage == 3){
+				Horizontal_Move(2.5*blockLength,velocity,90);
+				k210_cfg.mode = 1;
+				stage = 4;
+				maxcount = 250;
+				delay_flag = 1;
+			}
+			else if(stage == 4){	
+				stage = 5;
+				maxcount = 50;
+				delay_flag = 1;
+			}
+			else if(stage==5){	
+				Horizontal_Move(2.5*blockLength,velocity,270);
+				stage = 6;
+				maxcount = 250;
+				delay_flag = 1;
+			}
+			else if(stage==6){	
+				Horizontal_Move(3.5*blockLength,velocity,180);
+				k210_cfg.mode = 1;
+				stage = 7;
+				maxcount = 350;
+				delay_flag = 1;
+			}
+			else if(stage==7){	
+				Horizontal_Move(blockLength * 2,velocity,0);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 8;	
+			}
+			else if(stage==8){	
+				Horizontal_Move(blockLength * 1,velocity,90);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 9;					
+			}
+			else if(stage==9){
+				Horizontal_Move(blockLength * 1,velocity,0);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 10;	
+			}
+			else if(stage == 10){
+				Horizontal_Move(blockLength * 3,velocity,90);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 11;
+			}
+			else if(stage == 11){
+				Horizontal_Move(blockLength * 2,velocity,0);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 12;
+			}
+			else if(stage == 12){
+				Horizontal_Move(blockLength * 1,velocity,90);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 13;
+			}
+			else if(stage == 13){
+				Horizontal_Move(blockLength * 2,velocity,0);
+				maxcnt = k210.xoffset * 100;
+				delay_flag = 1;
+				k210.xoffset = 0;
+				k210.xdirection = 0;
+				stage = 14;
+			}
+			else if(stage == 14){
 				OneKey_Land();
 				counter = 0;
 				stage = 0;
