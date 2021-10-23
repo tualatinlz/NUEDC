@@ -32,7 +32,7 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x03:FC_Unlock();
 				break;
-			case 0x04:UserTask_FollowLineN(wholeLength);
+			case 0x04:solveMaze(80);
 				break;
 			case 0x05:test(100,0);
 				break;
@@ -192,6 +192,7 @@ void UserTask_FollowLineN(u8 wholeLength){
 		}
 	}
 }
+
 
 
 void solveMaze(u8 height){

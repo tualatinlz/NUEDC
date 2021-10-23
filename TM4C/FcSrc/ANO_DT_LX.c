@@ -191,17 +191,17 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	break;
 	case 0xf4: //K210模式指令
 	{
-		send_buffer[(*_cnt)++] = k210.mode;//K210工作模式切换
+		send_buffer[(*_cnt)++] = k210_cfg.mode;//K210工作模式切换
 	}
 	break;
 	case 0xf5: //K210参数指令
 	{
-		send_buffer[(*_cnt)++] = k210.l1;//L
-		send_buffer[(*_cnt)++] = k210.l2;//L
-		send_buffer[(*_cnt)++] = k210.a1;//A
-		send_buffer[(*_cnt)++] = k210.a2;//A
-		send_buffer[(*_cnt)++] = k210.b1;//B
-		send_buffer[(*_cnt)++] = k210.b2;//B
+		send_buffer[(*_cnt)++] = k210_cfg.l1;//L
+		send_buffer[(*_cnt)++] = k210_cfg.l2;//L
+		send_buffer[(*_cnt)++] = k210_cfg.a1;//A
+		send_buffer[(*_cnt)++] = k210_cfg.a2;//A
+		send_buffer[(*_cnt)++] = k210_cfg.b1;//B
+		send_buffer[(*_cnt)++] = k210_cfg.b2;//B
 	}
 	break;
 	default:
@@ -335,7 +335,7 @@ void HMI_Frame_Send(u8 target)
 				break;
 			case 0x33:send_buffer[_cnt++] = k210.distance + 0x30;
 				break;
-			case 0x34:send_buffer[_cnt++] = k210.mode + 0x30;
+			case 0x34:send_buffer[_cnt++] = k210_cfg.mode + 0x30;
 				break;	
 			case 0x35:
 				for(int i=100;i>=1;i = i/10){

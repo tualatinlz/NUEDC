@@ -2,6 +2,7 @@
 #include "Ano_DT_LX.h"
 
 _k210_st k210;
+_k210_config k210_cfg;
 static uint8_t _datatemp[50];
 
 //K210_GetOneByte是初级数据解析函数，串口每接收到一字节光流数据，调用本函数一次，函数参数就是串口收到的数据
