@@ -1,9 +1,11 @@
 enable_lens_corr = True # turn on for straighter lines...打开以获得更直的线条…
 THRESHOLD = (38, 100, -25, 28, -49, 60)
 #THRESHOLD = (30, 94, -23, 6, 21, -12)
-
 import sensor, image, time ,lcd , pyb
 from pyb import UART
+from pid import PID
+x_pid = PID(p=0.4, i=0)
+y_pid = PID(p=0.4, i=0)
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565) # 灰度更快
 sensor.set_framesize(sensor.QQVGA)#QQVGA 120*160
@@ -49,21 +51,34 @@ while(True):
     #img.erode(4, threshold = 1) 图像侵蚀
     #img.binary([THRESHOLD])#.invert()
     if enable_lens_corr: img.lens_corr(1.7) # for 2.8mm lens...
-    s_count=0
+    """
+    s_count=0 #线上下左右分类
     x_count=0
     z_count=0
     y_count=0
+    """
     qian=0
     duan=0
     hou=0
     you=0
     zuo=0
+    pid_ymean=0
+    pid_ycount=0
+    pid_xmean=0
+    pid_xcount=0
     for l in img.find_line_segments(merge_distance =20 , max_theta_diff = 15):
         img.draw_line(l.line(), color = (0, 255, 0))
         y_mean=(l.y1()+l.y2())/2
         x_mean=(l.x1()+l.x2())/2
+
         if(l.length()>=50):
-            if(y_mean>60 and l.theta()>=75 and l.theta()<=105):
+            if(l.theta()>=75 and l.theta()<=105):
+                pid_ymean+=y_mean
+            if(l.theta()<=15 or l.theta()>=165):
+                pid_xmean+=x_mean
+                pid_xcount+=1
+"""         
+            if(y_mean>60 and l.theta()>=75 and l.theta()<=105): #线上下左右计数
                 if(l.length()>=50 and l.length()<=70):
                     duan+=1
                 x_count+=1
@@ -75,7 +90,7 @@ while(True):
                 z_count+=1
             if(x_mean>=60 and (l.theta()<=15 or l.theta()>=165)):
                 y_count+=1
-
+"""
 
             if(x_mean>=30 and x_mean<=90 and (l.theta()<=15 or l.theta()>=165)):
                 if(min(l.y1(),l.y2())<=40):
@@ -90,6 +105,15 @@ while(True):
                 if(min(l.x1(),l.x2())<=40):
                     zuo+=1
         #print(l)
+
+    pid_xmean=pid_xmean/pid_xcount
+    pid_ymean=pid_ymean/pid_ycount
+    pid_xerr=pid_xmean-60
+    pid_yerr=pid_ymean-60
+    pid_xout=x_pid.get_pid(pid_xerr,1)
+    pid_yout=y_pid.get_pid(pid_yerr,1)
+    print(pid_xout)
+    print(pid_yout)
     if(nownn==0):
                 nownn=pyb.millis()
     else:
