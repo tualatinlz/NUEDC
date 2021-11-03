@@ -5,15 +5,15 @@
 #include "Drv_AnoOf.h"
 #include "ANO_DT_LX.h"
 #include "Drv_PwmOut.h"
-static u16 maxcount;
+static u16 delaycnt;
 static u8 delay_flag;
 
 //一级延迟函数 一次延迟20ms
 void delay20(){
 	static u16 count = 0;
-	if(count <= maxcount) count++;
+	if(count <= delaycnt) count++;
 	else{
-		maxcount = 0;
+		delaycnt = 0;
 		delay_flag = 0;
 		count = 0;
 		fc_sta.rotating = 0;
@@ -23,7 +23,7 @@ void delay20(){
 void UserTask_OneKeyCmd(void)
 {
 		static u8 counter1,counter2 = 0;
-		u16 wholeLength = 30000;
+		//u16 wholeLength = 30000;
 		LX_Change_Mode(3);
 		switch(hmi.mode){
 			case 0x01:FC_Lock();
@@ -39,7 +39,7 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x05:goMaze(80);
 				break;
-			case 0x06:
+			case 0x06:test(150,5);
 				break;
 			case 0x07:
 				break;
@@ -54,7 +54,7 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x13:GYR_Calibrate();
 								hmi.mode = 0;
-				break;			
+				break;
 		}
 }
 
@@ -83,48 +83,49 @@ void solveMaze(u8 height){
 		else{
 			if(stage == 0){
 				FC_Unlock();
+				k210_cfg.mode = 1;
 				stage = 1;
 				//起飞前等待4秒
-				maxcount = 200;
+				delaycnt = 200;
 				delay_flag = 1;
 			}
 			else if(stage == 1){
 				OneKey_Takeoff(targetHeight);
 				stage = 2;
-				maxcount = 150;
+				delaycnt = 150;
 				delay_flag = 1;
 			}
 			else if(stage == 2){
 				Horizontal_Move(3.5*blockLength,velocity,0);
 				stage = 3;
-				maxcount = 350;
+				delaycnt = 350;
 				delay_flag = 1;
 			}
 			else if(stage == 3){
 				Horizontal_Move(2.5*blockLength,velocity,90);
 				k210_cfg.mode = 1;
 				stage = 4;
-				maxcount = 250;
+				delaycnt = 250;
 				delay_flag = 1;
 			}
 			else if(stage == 4){	
 				//等待
 				dt.fun[0xf4].WTS = 1;
 				if(k210_cfg.mode == 0) stage = 5;
-				maxcount = 50;
+				delaycnt = 50;
 				delay_flag = 1;
 			}
 			else if(stage==5){	
 				Horizontal_Move(2.5*blockLength,velocity,270);
 				stage = 6;
-				maxcount = 250;
+				delaycnt = 250;
 				delay_flag = 1;
 			}
 			else if(stage==6){	
 				Horizontal_Move(3.5*blockLength,velocity,180);
 				k210_cfg.mode = 2;
 				stage = 7;
-				maxcount = 350;
+				delaycnt = 350;
 				delay_flag = 1;
 			}
 			else if(stage==7){	
@@ -148,7 +149,7 @@ void solveMaze(u8 height){
 				k210.yoffset = 0;
 				k210.ydirection = 0;
 				if(k210_cfg.mode == 0) stage = 10;
-				else stage = 7;		
+				else stage = 7;
 			}
 			else if(stage == 10){
 				OneKey_Land();
@@ -170,19 +171,19 @@ void solveMaze(u8 height){
 void goMaze(u8 height){
 		static u16 counter = 0;
 		counter ++;
-		u16 maxcnt = 6000;        //120秒降落 防止意外
-		static u8 count1 = 0;
+		u16 maxcnt = 3000;        //120秒降落 防止意外
 		static u8 stage = 0;			//流程执行阶段
-		u8 blockLength = 40;			//格子边长
-		u8 velocity = 20;	        //移动速度 最小10cm/s
+		u8 blockLength = 38;			//格子边长
+		u8 velocity = 15;	        //移动速度 最小10cm/s
 		u8 targetHeight = height;
 		LX_Change_Mode(3);
+		//标记执行阶段
+		k210_cfg.mode = stage;
 		
 		//切换状态时清除局部变量
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
-			count1 = 0;	
 			hmi.oldmode = hmi.mode;
 		}
 		//非阻塞延迟 一次20ms
@@ -190,107 +191,91 @@ void goMaze(u8 height){
 			delay20();
 		}
 		else{
-			if(stage == 0){
+			if(stage==0){
 				FC_Unlock();
 				stage = 1;
 				//起飞前等待4秒
-				maxcount = 200;
+				delaycnt = 200;
 				delay_flag = 1;
 			}
-			else if(stage == 1){
+			else if(stage==1){
 				OneKey_Takeoff(targetHeight);
 				stage = 2;
-				maxcount = 150;
+				delaycnt = 150;
 				delay_flag = 1;
 			}
-			else if(stage == 2){
+			else if(stage==2){
 				Horizontal_Move(3.5*blockLength,velocity,0);
 				stage = 3;
-				maxcount = 350;
+				delaycnt = 350;
 				delay_flag = 1;
 			}
 			else if(stage == 3){
 				Horizontal_Move(2.5*blockLength,velocity,90);
 				k210_cfg.mode = 1;
 				stage = 4;
-				maxcount = 250;
+				delaycnt = 250;
 				delay_flag = 1;
 			}
 			else if(stage == 4){	
 				stage = 5;
-				maxcount = 50;
+				delaycnt = 50;
 				delay_flag = 1;
 			}
 			else if(stage==5){	
 				Horizontal_Move(2.5*blockLength,velocity,270);
 				stage = 6;
-				maxcount = 250;
+				delaycnt = 250;
 				delay_flag = 1;
 			}
 			else if(stage==6){	
 				Horizontal_Move(3.5*blockLength,velocity,180);
 				k210_cfg.mode = 1;
 				stage = 7;
-				maxcount = 350;
-				delay_flag = 1;
 			}
-			else if(stage==7){	
+			else if(stage==7){
 				Horizontal_Move(blockLength * 2,velocity,0);
-				maxcnt = k210.xoffset * 100;
+				delaycnt = 100;
 				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
-				stage = 8;	
+				stage = 8;
 			}
-			else if(stage==8){	
+			else if(stage==8){
 				Horizontal_Move(blockLength * 1,velocity,90);
-				maxcnt = k210.xoffset * 100;
+				delaycnt = 100;
 				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
-				stage = 9;					
+				stage = 9;
 			}
 			else if(stage==9){
 				Horizontal_Move(blockLength * 1,velocity,0);
-				maxcnt = k210.xoffset * 100;
+				delaycnt = 100;
 				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
-				stage = 10;	
+				stage = 10;
 			}
 			else if(stage == 10){
 				Horizontal_Move(blockLength * 3,velocity,90);
-				maxcnt = k210.xoffset * 100;
+				delaycnt = 100;
 				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
-				stage = 11;
-			}
-			else if(stage == 11){
-				Horizontal_Move(blockLength * 2,velocity,0);
-				maxcnt = k210.xoffset * 100;
-				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
 				stage = 12;
 			}
 			else if(stage == 12){
-				Horizontal_Move(blockLength * 1,velocity,90);
-				maxcnt = k210.xoffset * 100;
+				Horizontal_Move(blockLength * 2,velocity,0);
+				delaycnt = 100;
 				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
 				stage = 13;
 			}
 			else if(stage == 13){
-				Horizontal_Move(blockLength * 2,velocity,0);
-				maxcnt = k210.xoffset * 100;
+				Horizontal_Move(blockLength * 1,velocity,90);
+				delaycnt = k210.xoffset * 100;
 				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
 				stage = 14;
 			}
 			else if(stage == 14){
+				Horizontal_Move(blockLength * 2,velocity,0);
+				delaycnt = 100;
+				delay_flag = 1;
+				stage = 15;
+			}
+			else if(stage == 15){
 				OneKey_Land();
 				counter = 0;
 				stage = 0;
@@ -333,25 +318,25 @@ void test(u16 height,u16 dh){
 				FC_Unlock();
 				stage = 1;
 				//起飞前等待
-				maxcount = 150;
+				delaycnt = 150;
 				delay_flag = 1;
 			}
 			else if(stage == 1){
 				OneKey_Takeoff(targetHeight);
 				stage = 2;
-				maxcount = 300;
+				delaycnt = 300;
 				delay_flag = 1;
 			}
 			else if(stage == 2){
 				//悬停
-				OneKey_Hang();
-				maxcount = 200;
+				Vertical_Down(dh,10);
+				delaycnt = 100;
 				delay_flag = 1;
 				stage = 3;
 			}
 			else if(stage == 3){
-				Horizontal_Move(50,15,0);
-				maxcount = 100;
+				Vertical_Up(dh,10);
+				delaycnt = 100;
 				delay_flag = 1;
 				stage = 2;
 			}
@@ -404,21 +389,21 @@ void rotate(u16 r,u8 direction){
 			if(stage==1){
 				if(direction == 0)Left_Rotate(deg,degs);
 				else Right_Rotate(deg,degs);
-				maxcount = deg * 50 /degs;
+				delaycnt = deg * 50 /degs;
 				delay_flag = 1;
 				stage = 2;
 			}
 			else if(stage==2){
 				if(direction == 0) Horizontal_Move(distance,velocity,90);
 				else Horizontal_Move(distance,velocity,270);
-				maxcount = distance * 50 / velocity;
+				delaycnt = distance * 50 / velocity;
 				delay_flag = 1;
 				//stage = 3;
 				stage = 1;
 			}
 			else if(stage==3){
 				if(k210.distance<100 && k210.distance>70)Horizontal_Move(k210.distance - 70,10,180);
-				maxcount = 50;
+				delaycnt = 50;
 				delay_flag = 1;
 				stage = 1;
 			}
