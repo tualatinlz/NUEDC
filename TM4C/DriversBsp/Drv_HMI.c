@@ -76,7 +76,7 @@ static void HMI_DataAnl(uint8_t *data, uint8_t len)
 	if (*(data + 2) == 0XF3) 
 	{
 		if(*(data + 4) == 0){ //串口屏指令
-			hmi.oldmode = hmi.mode;
+			if(*(data + 5) != hmi.mode)	hmi.oldmode = hmi.mode;
 			hmi.mode = *(data + 5);
 		}
 		else if(*(data + 4) == 1){ //阈值调整
