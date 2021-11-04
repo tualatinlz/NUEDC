@@ -5,6 +5,7 @@
 #include "Drv_AnoOf.h"
 #include "ANO_DT_LX.h"
 #include "Drv_PwmOut.h"
+#include "Drv_Led.h"
 static u16 delaycnt;
 static u8 delay_flag;
 
@@ -35,13 +36,9 @@ void UserTask_OneKeyCmd(void)
 			case 0x03:FC_Unlock();
 			hmi.mode = 0;
 				break;
-			case 0x04:solveMaze(80);
+			case 0x04:spreadP(150);
 				break;
-			case 0x05:goMaze(80);
-				break;
-			case 0x06:test(150,5);
-				break;
-			case 0x07:
+			case 0x05:spreadPU(150);
 				break;
 			case 0x10:Horizontal_Calibrate();
 								hmi.mode = 0;
@@ -57,136 +54,79 @@ void UserTask_OneKeyCmd(void)
 				break;
 		}
 }
-
-void solveMaze(u8 height){
+void spreadP(u8 height){
 		static u16 counter = 0;
 		counter ++;
-		u16 maxcnt = 6000;        //120秒降落 防止意外
-		static u8 count1 = 0;
-		static u8 stage = 0;			//流程执行阶段
-		u8 blockLength = 40;			//格子边长
-		u8 velocity = 20;	        //移动速度 最小10cm/s
-		u8 targetHeight = height;
+		u16 maxcnt = 10000;
+		static u8 sendflag=0;
+		static u8 stage = 0;
+		static u8 step = 0;
+		u8 blockLength = 50;
+		u8 velocity = 50;
+		u8 vd = 90;	 
 		LX_Change_Mode(3);
 		
-		//切换状态时清除局部变量
-		if(hmi.mode != hmi.oldmode){
-			counter = 0;
-			stage = 0;
-			count1 = 0;	
-			hmi.oldmode = hmi.mode;
-		}
-		//非阻塞延迟 一次20ms
-		if(delay_flag){
-			delay20();
-		}
-		else{
-			if(stage == 0){
-				FC_Unlock();
-				k210_cfg.mode = 1;
-				stage = 1;
-				//起飞前等待4秒
-				delaycnt = 200;
-				delay_flag = 1;
-			}
-			else if(stage == 1){
-				OneKey_Takeoff(targetHeight);
-				stage = 2;
-				delaycnt = 150;
-				delay_flag = 1;
-			}
-			else if(stage == 2){
-				Horizontal_Move(3.5*blockLength,velocity,0);
-				stage = 3;
-				delaycnt = 350;
-				delay_flag = 1;
-			}
-			else if(stage == 3){
-				Horizontal_Move(2.5*blockLength,velocity,90);
-				k210_cfg.mode = 1;
-				stage = 4;
-				delaycnt = 250;
-				delay_flag = 1;
-			}
-			else if(stage == 4){	
-				//等待
-				dt.fun[0xf4].WTS = 1;
-				if(k210_cfg.mode == 0) stage = 5;
-				delaycnt = 50;
-				delay_flag = 1;
-			}
-			else if(stage==5){	
-				Horizontal_Move(2.5*blockLength,velocity,270);
-				stage = 6;
-				delaycnt = 250;
-				delay_flag = 1;
-			}
-			else if(stage==6){	
-				Horizontal_Move(3.5*blockLength,velocity,180);
-				k210_cfg.mode = 2;
-				stage = 7;
-				delaycnt = 350;
-				delay_flag = 1;
-			}
-			else if(stage==7){	
-				dt.fun[0xf4].WTS = 1;
-				stage = 8;
-				maxcnt = 30;
-				delay_flag = 1;
-			}
-			else if(stage==8){	
-				Horizontal_Move(blockLength * k210.xoffset,velocity,k210.xdirection*180 + 90);
-				maxcnt = k210.xoffset * 100;
-				delay_flag = 1;
-				k210.xoffset = 0;
-				k210.xdirection = 0;
-				stage = 9;				
-			}
-			else if(stage==9){
-				Horizontal_Move(blockLength * k210.yoffset,velocity,k210.ydirection*180);
-				maxcnt = k210.yoffset * 100;
-				delay_flag = 1;
-				k210.yoffset = 0;
-				k210.ydirection = 0;
-				if(k210_cfg.mode == 0) stage = 10;
-				else stage = 7;
-			}
-			else if(stage == 10){
-				OneKey_Land();
-				counter = 0;
-				stage = 0;
-				hmi.mode = 0;
-			}
-			 
-		//超时降落
-		if(counter >= maxcnt){
-			OneKey_Land();
-			counter = 0;
-			stage = 0;
-			hmi.mode = 0;
-		}
-	}
-}
-
-void goMaze(u8 height){
-		static u16 counter = 0;
-		counter ++;
-		u16 maxcnt = 3000;        //120秒降落 防止意外
-		static u8 stage = 0;			//流程执行阶段
-		u8 blockLength = 38;			//格子边长
-		u8 velocity = 15;	        //移动速度 最小10cm/s
-		u8 targetHeight = height;
-		LX_Change_Mode(3);
-		//标记执行阶段
-		k210_cfg.mode = stage;
-		
-		//切换状态时清除局部变量
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
 			hmi.oldmode = hmi.mode;
 		}
-		//非阻塞延迟 一次20ms
+		switch(step){
+			case 4:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 8:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 11:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 12:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 14:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 15:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 17:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 18:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 20:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 21:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 23:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 24:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 30:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+					stage = 5;
+				break;
+		}
+		
 		if(delay_flag){
 			delay20();
 		}
@@ -194,95 +134,80 @@ void goMaze(u8 height){
 			if(stage==0){
 				FC_Unlock();
 				stage = 1;
-				//起飞前等待4秒
 				delaycnt = 200;
 				delay_flag = 1;
 			}
 			else if(stage==1){
-				OneKey_Takeoff(targetHeight);
+				OneKey_Takeoff(height);
 				stage = 2;
 				delaycnt = 150;
 				delay_flag = 1;
 			}
 			else if(stage==2){
-				Horizontal_Move(3.5*blockLength,velocity,0);
+				Horizontal_Move(4*blockLength,velocity,0);
 				stage = 3;
-				delaycnt = 350;
+				delaycnt = 200;
 				delay_flag = 1;
 			}
 			else if(stage == 3){
-				Horizontal_Move(2.5*blockLength,velocity,90);
-				k210_cfg.mode = 1;
-				stage = 4;
-				delaycnt = 250;
-				delay_flag = 1;
-			}
-			else if(stage == 4){	
-				stage = 5;
+				Right_Rotate(90,90);
+				step++;
 				delaycnt = 50;
 				delay_flag = 1;
+				stage=4;
 			}
-			else if(stage==5){	
-				Horizontal_Move(2.5*blockLength,velocity,270);
-				stage = 6;
-				delaycnt = 250;
+			else if(stage == 4){
+				Horizontal_Move(blockLength,velocity,0);
+				step++;
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=5;
+			}
+			else if(stage==5){
+        if(sendflag==0){
+          k210_cfg.go=1;
+          dt.fun[0xf4].WTS=1;                   
+          sendflag=1;
+        }
+				if(k210.next==1){
+					stage = 4;
+          k210_cfg.go=0;
+					k210.next=0;
+          sendflag=0;
+				}
+				delaycnt = 25;
 				delay_flag = 1;
 			}
-			else if(stage==6){	
-				Horizontal_Move(3.5*blockLength,velocity,180);
-				k210_cfg.mode = 1;
-				stage = 7;
+			else if(stage==6){
+				Horizontal_Move(5*blockLength,velocity,0);
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=7;
 			}
 			else if(stage==7){
-				Horizontal_Move(blockLength * 2,velocity,0);
-				delaycnt = 100;
+				Horizontal_Move(blockLength,velocity,90);
+				delaycnt = 50;
 				delay_flag = 1;
-				stage = 8;
+				stage=8;
 			}
 			else if(stage==8){
-				Horizontal_Move(blockLength * 1,velocity,90);
-				delaycnt = 100;
+				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+				delaycnt = 50;
 				delay_flag = 1;
-				stage = 9;
+				stage=9;
+				if(k210.land == 1)stage=10;
 			}
 			else if(stage==9){
-				Horizontal_Move(blockLength * 1,velocity,0);
-				delaycnt = 100;
+				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+				delaycnt = 50;
 				delay_flag = 1;
-				stage = 10;
+				stage=8;
+				if(k210.land == 1)stage=10;
 			}
-			else if(stage == 10){
-				Horizontal_Move(blockLength * 3,velocity,90);
-				delaycnt = 100;
-				delay_flag = 1;
-				stage = 12;
-			}
-			else if(stage == 12){
-				Horizontal_Move(blockLength * 2,velocity,0);
-				delaycnt = 100;
-				delay_flag = 1;
-				stage = 13;
-			}
-			else if(stage == 13){
-				Horizontal_Move(blockLength * 1,velocity,90);
-				delaycnt = k210.xoffset * 100;
-				delay_flag = 1;
-				stage = 14;
-			}
-			else if(stage == 14){
-				Horizontal_Move(blockLength * 2,velocity,0);
-				delaycnt = 100;
-				delay_flag = 1;
-				stage = 15;
-			}
-			else if(stage == 15){
+			else if(stage==10){
 				OneKey_Land();
-				counter = 0;
-				stage = 0;
-				hmi.mode = 0;
 			}
-			 
-		//超时降落
+				
 		if(counter >= maxcnt){
 			OneKey_Land();
 			counter = 0;
@@ -292,77 +217,161 @@ void goMaze(u8 height){
 	}
 }
 
-void test(u16 height,u16 dh){
+
+void spreadPU(u8 height){
 		static u16 counter = 0;
-		u16 maxcnt = 3000;        //60秒降落 防止意外
-		static u8 count1 = 0;
-		static u8 stage = 0;			//流程执行阶段
-		u8 distance = 20;				  //每次移动的距离
-		u8 velocity = 10;	        //移动速度 最小10cm/s
-		u8 targetHeight = height;
-		LX_Change_Mode(3);
 		counter ++;
-		//切换状态时清除局部变量
+		u16 maxcnt = 10000;
+		static u8 sendflag=0;
+		static u8 stage = 0;
+		static u8 step = 0;
+		u8 blockLength = 50;
+		u8 velocity = 50;
+		u8 vd = 90;	 
+		LX_Change_Mode(3);
+		
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
-			count1 = 0;	
 			hmi.oldmode = hmi.mode;
 		}
-		//非阻塞延迟 一次20ms
+		switch(step){
+			case 4:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 8:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 11:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 12:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 14:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 15:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 17:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 18:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 20:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 21:Right_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 23:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 24:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+				break;
+			case 30:Left_Rotate(90,vd);
+					delaycnt=50;
+					delay_flag=1;
+					stage = 5;
+				break;
+		}
+		
 		if(delay_flag){
 			delay20();
 		}
 		else{
-			if(stage == 0){
+			if(stage==0){
 				FC_Unlock();
 				stage = 1;
-				//起飞前等待
+				delaycnt = 200;
+				delay_flag = 1;
+			}
+			else if(stage==1){
+				OneKey_Takeoff(height);
+				stage = 2;
 				delaycnt = 150;
 				delay_flag = 1;
 			}
-			else if(stage == 1){
-				OneKey_Takeoff(targetHeight);
-				stage = 2;
-				delaycnt = 300;
-				delay_flag = 1;
-			}
-			else if(stage == 2){
-				//悬停
-				Vertical_Down(dh,10);
-				delaycnt = 100;
-				delay_flag = 1;
+			else if(stage==2){
+				Horizontal_Move(4*blockLength,velocity,0);
 				stage = 3;
+				delaycnt = 200;
+				delay_flag = 1;
 			}
 			else if(stage == 3){
-				Vertical_Up(dh,10);
-				delaycnt = 100;
+				Right_Rotate(90,90);
+				step++;
+				delaycnt = 50;
 				delay_flag = 1;
-				stage = 2;
+				stage=4;
 			}
-			else if(stage == 4){	//距离确定后向右巡线
-
+			else if(stage == 4){
+				Horizontal_Move(blockLength,velocity,0);
+				step++;
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=5;
 			}
-			else if(stage==5){	//根据电线调整飞机高度
-
+			else if(stage==5){
+        if(sendflag==0){
+          k210_cfg.go=1;
+          dt.fun[0xf4].WTS=1;                   
+          sendflag=1;
+        }
+				if(k210.next==1){
+					stage = 4;
+          k210_cfg.go=0;
+					k210.next=0;
+          sendflag=0;
+				}
+				delaycnt = 25;
+				delay_flag = 1;
 			}
-			else if(stage==6){	//识别到条形码后
-
+			else if(stage==6){
+				Horizontal_Move(5*blockLength,velocity,0);
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=7;
 			}
-			else if(stage==7){	//距离确定后向右巡线
-
+			else if(stage==7){
+				Horizontal_Move(blockLength,velocity,90);
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=8;
 			}
-			else if(stage==8){	//根据电线调整飞机高度
-
+			else if(stage==8){
+				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=9;
+				if(k210.land == 1)stage=10;
 			}
-			else if(stage==9){	//绕杆
+			else if(stage==9){
+				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=8;
+				if(k210.land == 1)stage=10;
+			}
+			else if(stage==10){
 				OneKey_Land();
-				counter = 0;
-				stage = 0;
-				hmi.mode = 0;
 			}
-			 
-		//超时降落
+				
 		if(counter >= maxcnt){
 			OneKey_Land();
 			counter = 0;
@@ -372,41 +381,17 @@ void test(u16 height,u16 dh){
 	}
 }
 
-//原地自转
-void rotate(u16 r,u8 direction){
-		static u16 counter = 0;
-		static u8 stage = 1;				//流程执行阶段
-		u8 deg = 20;								//单次旋转角度
-		u8 degs = 10;								//旋转角速度 不应大于deg
-		u8 distance = 2*0.1736*r;		//单次移动距离 决定周长
-		u8 velocity = distance;			//单次移动速度
-	
-		//非阻塞延迟 一次20ms
-		if(delay_flag){
-			delay20();
-		}
-		else{
-			if(stage==1){
-				if(direction == 0)Left_Rotate(deg,degs);
-				else Right_Rotate(deg,degs);
-				delaycnt = deg * 50 /degs;
-				delay_flag = 1;
-				stage = 2;
-			}
-			else if(stage==2){
-				if(direction == 0) Horizontal_Move(distance,velocity,90);
-				else Horizontal_Move(distance,velocity,270);
-				delaycnt = distance * 50 / velocity;
-				delay_flag = 1;
-				//stage = 3;
-				stage = 1;
-			}
-			else if(stage==3){
-				if(k210.distance<100 && k210.distance>70)Horizontal_Move(k210.distance - 70,10,180);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage = 1;
-			}
+//控制LED闪烁，调用一次切换一次状态
+void blink(void){
+	u8 color = 1;
+	static u8 clicked = 0;
+	if(clicked){
+		clicked=0;
+		DrvLedOnOff(0);
+	}
+	else{
+		clicked=1;
+		DrvLedOnOff(color);
 	}
 }
 

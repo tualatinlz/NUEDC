@@ -69,10 +69,11 @@ u8 LX_Change_Mode(u8 new_mode)
 	static u8 old_mode;
 	if (old_mode != new_mode)
 	{
-		//
+		
 		if (dt.wait_ck == 0) //没有其他等待校验的CMD时才发送本CMD
 		{
-			old_mode = fc_sta.fc_mode_cmd = new_mode;
+			old_mode = fc_sta.fc_mode_sta;
+			fc_sta.fc_mode_cmd = new_mode;
 			//按协议发送指令
 			dt.cmd_send.CID = 0X01;
 			dt.cmd_send.CMD[0] = 0X01;

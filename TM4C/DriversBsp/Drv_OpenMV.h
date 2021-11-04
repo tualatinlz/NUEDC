@@ -1,5 +1,5 @@
-#ifndef __DRV_K210_H
-#define __DRV_K210_H
+#ifndef __DRV_OpenMV_H
+#define __DRV_OpenMV_H
 
 //==引用
 #include "SysConfig.h"
@@ -17,14 +17,13 @@ typedef struct
 	u8  yoffset;			 //左右偏移量
 	u8  ydirection; 	//y轴移动方向 右为0
   u8  update_cnt;  	//数据更新计数
-	u8  green;        //识别到绿色色块为1
 	u8  next;
 	u8  land;
-} _k210_st;
+} _openmv_st;
 
 typedef struct
 {
-	u8 	mode;        	//k210工作模式选择
+	u8 	mode;        	//openmv工作模式选择
 	u8  go;
 	u8  l1;
 	u8  l2;
@@ -32,17 +31,17 @@ typedef struct
 	u8 	a2;
 	u8 	b1;
 	u8 	b2;
-} _k210_config;
+} _openmv_config;
 //状态
 
 //==数据声明
-extern _k210_st k210;
-extern _k210_config k210_cfg;
+extern _openmv_st openmv;
+extern _openmv_config openmv_cfg;
 //==函数声明
 //static
-static void K210_DataAnl(uint8_t *data_buf, uint8_t num);
+static void OpenMV_DataAnl(uint8_t *data_buf, uint8_t num);
 
 //public
-void K210_GetOneByte(uint8_t data);
-void K210_Check_State(float dT_s);
+void OpenMV_GetOneByte(uint8_t data);
+void OpenMV_Check_State(float dT_s);
 #endif

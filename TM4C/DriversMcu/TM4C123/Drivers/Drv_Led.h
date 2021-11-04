@@ -12,5 +12,6 @@ extern _led_st led;
 
 void DvrLedInit(void);
 void LED_1ms_DRV(void);
+void DrvLedOnOff(u16 sta);
 
 #endif

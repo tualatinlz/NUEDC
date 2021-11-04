@@ -499,16 +499,6 @@
               <FilePath>..\DriversBsp\Drv_HMI.h</FilePath>
             </File>
             <File>
-              <FileName>Drv_EY4600.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DriversBsp\Drv_EY4600.c</FilePath>
-            </File>
-            <File>
-              <FileName>Drv_EY4600.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\DriversBsp\Drv_EY4600.h</FilePath>
-            </File>
-            <File>
               <FileName>Drv_BSP.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DriversBsp\Drv_BSP.c</FilePath>
@@ -527,6 +517,16 @@
               <FileName>Drv_HWT101.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\DriversBsp\Drv_HWT101.h</FilePath>
+            </File>
+            <File>
+              <FileName>Drv_OpenMV.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DriversBsp\Drv_OpenMV.c</FilePath>
+            </File>
+            <File>
+              <FileName>Drv_OpenMV.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\DriversBsp\Drv_OpenMV.h</FilePath>
             </File>
           </Files>
         </Group>
