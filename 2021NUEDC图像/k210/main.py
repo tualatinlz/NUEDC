@@ -27,7 +27,7 @@ fm.register(21,fm.fpioa.GPIO2)
 laser_out=GPIO(GPIO.GPIO2,GPIO.OUT)
 laser_out.value(0)
 class ctrl(object):
-    work_mode = 0x02 #工作模式，可以通过串口设置成其他模式
+    work_mode = 0x03 #工作模式，可以通过串口设置成其他模式
 
 ctrl=ctrl()
 #YOLOV2模型
@@ -187,43 +187,41 @@ class dot(object):
         self.ok=0
         self.x=0
         self.y=0
-        self.THRESHOLD = (38, 100, -25, 28, -49, 60)
+        self.THRESHOLD = (72, 99, -6, 11, -10, 11)
     def find_dot(self,img):
         #thresholds为黑色物体颜色的阈值，是一个元组，需要用括号［ ］括起来可以根据不同的颜色阈值更改；pixels_threshold 像素个数阈值，
         #如果色块像素数量小于这个值，会被过滤掉area_threshold 面积阈值，如果色块被框起来的面积小于这个值，会被过滤掉；merge 合并，如果
         #设置为True，那么合并所有重叠的blob为一个；margin 边界，如果设置为5，那么两个blobs如果间距5一个像素点，也会被合并。
-        for blob in img.find_blobs([self.THRESHOLD], pixels_threshold=80, area_threshold=80, merge=True, margin=5):
+        for blob in img.find_blobs([self.THRESHOLD], pixels_threshold=1200, area_threshold=80, merge=True, margin=5):
             if self.pixels<blob.pixels():#寻找最大的黑点
                 ##先对图像进行分割，二值化，将在阈值内的区域变为白色，阈值外区域变为黑色
-                img.binary([self.THRESHOLD])
+                #img.binary([self.THRESHOLD])
                 #对图像边缘进行侵蚀，侵蚀函数erode(size, threshold=Auto)，size为kernal的大小，去除边缘相邻处多余的点。threshold用
                 #来设置去除相邻点的个数，threshold数值越大，被侵蚀掉的边缘点越多，边缘旁边白色杂点少；数值越小，被侵蚀掉的边缘点越少，边缘
                 #旁边的白色杂点越多。
-                img.erode(2)
-                dot.pixels=blob.pixels() #将像素值赋值给dot.pixels
-                dot.x = blob.cx() #将识别到的物体的中心点x坐标赋值给dot.x
-                dot.y = blob.cy() #将识别到的物体的中心点x坐标赋值给dot.x
-                dot.ok= 1
+                #img.erode(2)
+                self.pixels=blob.pixels() #将像素值赋值给dot.pixels
+                self.x = blob.cx() #将识别到的物体的中心点x坐标赋值给dot.x
+                self.y = blob.cy() #将识别到的物体的中心点x坐标赋值给dot.x
+                self.ok= 1
                 #在图像中画一个十字；x,y是坐标；size是两侧的尺寸；color可根据自己的喜好设置
-                img.draw_cross(dot.x, dot.y, color=127, size = 10)
+                img.draw_cross(self.x, self.y, color=127, size = 10)
                 #在图像中画一个圆；x,y是坐标；5是圆的半径；color可根据自己的喜好设置
-                img.draw_circle(dot.x, dot.y, 5, color = 127)
-                print("centre_x = %d, centre_y = %d"%(dot.x, dot.y))
+                img.draw_circle(self.x, self.y, 5, color = 127)
+                print("centre_x = %d, centre_y = %d"%(self.x, self.y))
 
         #判断标志位 赋值像素点数据
-        dot.flag = dot.ok
-        dot.num = dot.pixels
 
         #清零标志位
-        dot.pixels = 0
-        dot.ok = 0
+        self.pixels = 0
+        self.ok = 0
 
 #声明灰绿色块类
 object1=dot_green()
 #声明条码转发
 object2=bar_code()
 #声明YOLO类(模型名称，anchor，lable)
-object3=kkpu('out','anchors','lable')
+#object3=kkpu('out','anchors','lable')
 #声明寻点类
 object4=dot()
 
@@ -252,6 +250,7 @@ while(True):
         object3.runn(img)
     if (ctrl.work_mode==0x03):#MODE4 #寻找十字的坐标
         object4.find_dot(img)
+        sensor.set_windowing((320,240))
     if (ctrl.work_mode==0x00):#MODE5 #空
         True
     change_mod()#模式改变
