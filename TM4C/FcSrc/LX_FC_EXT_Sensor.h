@@ -5,7 +5,7 @@
 #include "SysConfig.h"
 #include "Drv_K210.h"
 #include "Drv_HMI.h"
-#include "Drv_EY4600.h"
+#include "Drv_OpenMV.h"
 //==定义/声明
 //====通用传感器数据====
 typedef struct

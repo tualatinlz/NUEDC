@@ -101,15 +101,6 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 		}
 	}
 	break;
-	//case 0x30: //GPS数据
-	//{
-		//
-		//for (u8 i = 0; i < 23; i++)
-		//{
-		//	send_buffer[(*_cnt)++] = ext_sens.fc_gps.byte[i];
-		//}
-	//}
-	//break;
 	case 0x33: //通用速度测量数据
 	{
 		//
@@ -173,15 +164,13 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 			send_buffer[(*_cnt)++] = k210.leftorright;
 			send_buffer[(*_cnt)++] = k210.xoffset;
 			send_buffer[(*_cnt)++] = k210.yoffset;
-			send_buffer[(*_cnt)++] = BYTE0(k210.distance);
-			send_buffer[(*_cnt)++] = BYTE1(k210.distance);
 	}
 	break;
-	case 0xf2: //EY4600参数传递
+	case 0xf2: //OpenMV参数传递
 	{
 		for (u8 i = 0; i < 8; i++)
 		{
-			send_buffer[(*_cnt)++] = ey4600.rawdata[i];
+			//send_buffer[(*_cnt)++] = ey4600.rawdata[i];
 		}
 	}
 	break;
@@ -192,6 +181,7 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	case 0xf4: //K210模式指令
 	{
 		send_buffer[(*_cnt)++] = k210_cfg.mode;//K210工作模式切换
+		send_buffer[(*_cnt)++] = k210_cfg.go;
 	}
 	break;
 	case 0xf5: //K210参数指令
@@ -298,7 +288,7 @@ void HMI_Frame_Send(u8 target)
 				send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
 				send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
 				break;
-			case 0x32:send_buffer[_cnt++] = hmi.mode + 0x30;
+			case 0x32:send_buffer[_cnt++] = fc_sta.fc_mode_sta + 0x30;
 				break;
 			case 0x33:send_buffer[_cnt++] = k210.number+0x30;
 				break;
@@ -333,8 +323,8 @@ void HMI_Frame_Send(u8 target)
 				break;
 			case 0x32:send_buffer[_cnt++] = k210.ydirection + 0x30;
 				break;
-			case 0x33:send_buffer[_cnt++] = k210.distance + 0x30;
-				break;
+			//case 0x33:send_buffer[_cnt++] = k210.distance + 0x30;
+				//break;
 			case 0x34:send_buffer[_cnt++] = k210_cfg.mode + 0x30;
 				break;	
 			case 0x35:
@@ -576,10 +566,10 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len)
 	//凌霄IMU发出的RGB灯光数据
 	else if (*(data + 2) == 0X0f)
 	{
-		led.brightness[0] = *(data + 4);
-		led.brightness[1] = *(data + 5);
-		led.brightness[2] = *(data + 6);
-		led.brightness[3] = *(data + 7);
+		//led.brightness[0] = *(data + 4);
+		//led.brightness[1] = *(data + 5);
+		//led.brightness[2] = *(data + 6);
+		//led.brightness[3] = *(data + 7);
 	}
 	//凌霄飞控当前的运行状态
 	else if (*(data + 2) == 0X06)
