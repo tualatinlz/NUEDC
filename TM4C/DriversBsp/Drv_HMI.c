@@ -79,7 +79,7 @@ static void HMI_DataAnl(uint8_t *data, uint8_t len)
 			if(*(data + 5) != hmi.mode)	hmi.oldmode = hmi.mode;
 			hmi.mode = *(data + 5);
 		}
-		else if(*(data + 4) == 1){ //阈值调整
+		else if(*(data + 4) == 1){ //K210阈值调整
 			k210_cfg.l1 = *(data + 5);
 			k210_cfg.l2 = *(data + 6);
 			k210_cfg.a1 = *(data + 7);
@@ -90,6 +90,15 @@ static void HMI_DataAnl(uint8_t *data, uint8_t len)
 		}
 		else if(*(data + 4) == 2){ //页面号
 			hmi.page = *(data + 5);
+		}
+		else if(*(data + 4) == 3){ //OpenMV阈值调整
+			openmv_cfg.l1 = *(data + 5);
+			openmv_cfg.l2 = *(data + 6);
+			openmv_cfg.a1 = *(data + 7);
+			openmv_cfg.a2 = *(data + 8);
+			openmv_cfg.b1 = *(data + 9);
+			openmv_cfg.b2 = *(data + 10);
+			dt.fun[0xf6].WTS = 1; //标记CMD等待发送
 		}
 	}
 }

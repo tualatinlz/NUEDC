@@ -54,6 +54,7 @@ extern _dt_st dt;
 //static
 static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length);
 static void ANO_DT_USER_Send_Data(u8 *dataToSend, u8 length);
+static void ANO_DT_OpenMV_Send_Data(u8 *dataToSend, u8 length);
 static void ANO_DT_K210_Send_Data(u8 *dataToSend, u8 length);
 static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len);
 

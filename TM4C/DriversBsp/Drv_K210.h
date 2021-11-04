@@ -25,7 +25,7 @@ typedef struct
 typedef struct
 {
 	u8 	mode;        	//k210工作模式选择
-	u8  go;
+	u8  go;						//下一个绿色格子
 	u8  l1;
 	u8  l2;
 	u8 	a1;

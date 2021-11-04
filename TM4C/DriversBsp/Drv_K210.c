@@ -105,7 +105,11 @@ static void K210_DataAnl(uint8_t *data, uint8_t len)
 		}
 		else if (*(data + 4) == 5) //当前工作模式
 		{
-			k210_cfg.mode = *(data + 6);
+			k210.next = *(data + 5);
+		}
+		else if (*(data + 4) == 6) //当前工作模式
+		{
+			k210.land = *(data + 5);
 		}
 	}
 }

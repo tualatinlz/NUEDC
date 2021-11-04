@@ -95,17 +95,9 @@ static void OpenMV_DataAnl(uint8_t *data, uint8_t len)
 			openmv.yoffset = *(data + 6)<<8 | *(data + 7);
 			openmv.update_cnt++;
 		}
-		else if (*(data + 4) == 3) //超声波测距传输
+		else if (*(data + 4) == 3) //无人机到距离了
 		{
-
-		}
-		else if (*(data + 4) == 4) //数字识别
-		{
-			openmv.number = *(data + 5);
-		}
-		else if (*(data + 4) == 5) //当前工作模式
-		{
-			openmv_cfg.mode = *(data + 6);
+			openmv.ready = *(data + 5);
 		}
 	}
 }
