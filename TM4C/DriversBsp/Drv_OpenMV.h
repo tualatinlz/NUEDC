@@ -17,8 +17,8 @@ typedef struct
 	u8  yoffset;			 //左右偏移量
 	u8  ydirection; 	//y轴移动方向 右为0
   u8  update_cnt;  	//数据更新计数
-	u8  ready;
-	u8  land;
+	u8  ready;				//到杆子指定位置了
+	u8  distance;			//超声波距离
 } _openmv_st;
 
 typedef struct

@@ -26,12 +26,12 @@ u8 All_Init()
 	MyDelayMs(100);
 	//接HMI串口屏
 	DrvUart1Init(250000);
-	//串口2初始化 EY4600
+	//串口2初始化 OpenMV
 	DrvUart2Init(115200);
 	//串口3初始化 K210
 	DrvUart3Init(115200);
 	//接匿名光流
-	DrvUart4Init(115200);
+	DrvUart4Init(500000);
 	//串口5接imu 后期接数传
 	DrvUart5Init(500000);
 	MyDelayMs(100);

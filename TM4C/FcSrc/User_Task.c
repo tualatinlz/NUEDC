@@ -9,6 +9,7 @@
 #include "Drv_Led.h"
 static u16 delaycnt;
 static u8 delay_flag;
+extern int targetHeight;
 
 //一级延迟函数 一次延迟20ms
 void delay20(){
@@ -24,7 +25,7 @@ void delay20(){
 //主函数 包括不同模式
 void UserTask_OneKeyCmd(void)
 {
-		static u8 counter1,counter2 = 0;
+		//static u8 counter1,counter2 = 0;
 		//u16 wholeLength = 30000;
 		LX_Change_Mode(3);
 		switch(hmi.mode){
@@ -56,21 +57,251 @@ void UserTask_OneKeyCmd(void)
 		}
 }
 void spreadP(u8 height){
-		static u16 counter = 0;
+		static u16 counter = 0;		//飞行时间计数
 		counter ++;
-		u16 maxcnt = 10000;
-		static u8 sendflag=0;
-		static u8 stage = 0;
-		static u8 step = 0;
-		static u8 counterLED = 0;
-		u8 blockLength = 50;
-		u8 velocity = 50;
-		u8 vd = 90;	 
-		LX_Change_Mode(3);
+		u16 maxcnt = 18000;				//最大飞行时间
+		static u8 stage = 0;			//流程执行阶段
+		static u8 sendflag=0;			//发送标志位
+		static u8 step = 1;				//格子走到第几步了
+		static u8 counterLED = 0;	//LED闪烁次数
+		u8 blockLength = 50;			//格子长度
+		u8 velocity = 50;					//前进速度
+		u8 vd = 45;	 							//转向角速度
+		u8 degcnt = 110;					//转向等待时间
+		LX_Change_Mode(3);				//切换到程控模式
 		
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
+			sendflag = 0;
+			step = 0;
+			counterLED = 0;
+			hmi.oldmode = hmi.mode;
+		}
+		switch(step){
+			case 4:Right_Rotate(90,vd);
+					step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 8:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 11:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 12:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 14:Right_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 15:Right_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 17:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 18:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 20:Right_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 21:Right_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 23:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 24:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+				break;
+			case 30:Left_Rotate(90,vd);
+			step++;
+					delaycnt=degcnt;
+					delay_flag=1;
+					stage = 10;
+				break;
+				default:
+					break;
+		}
+		
+		if(delay_flag){
+			delay20();
+		}
+		else{
+			switch(stage){
+				case 0:
+					FC_Unlock();
+					k210.number = 4;
+					stage = 1;
+					delaycnt = 200;
+					delay_flag = 1;
+				break;
+				case 1:
+					targetHeight = height;
+					OneKey_Takeoff(height);
+					stage = 2;
+					delaycnt = 250;
+					delay_flag = 1;
+				break;
+				case 2:
+					Horizontal_Move(4*blockLength,velocity,0);
+					stage = 3;
+					delaycnt = 250;
+					delay_flag = 1;
+				break;
+				case 3:
+					Right_Rotate(90,90);
+					step++;
+					delaycnt = 100;
+					delay_flag = 1;
+					stage=4;
+				break;	
+				//经验调整
+				case 4:
+					Horizontal_Move(blockLength,velocity,0); 
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=5;
+				break;
+				//K210开启字母识别，根据A位置调整
+				case 5:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 60;
+					delay_flag = 1;
+					stage=6;
+				break;
+				case 6:
+					Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=7;
+				break;
+				case 7:
+					Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=32;
+				break;
+				case 32:
+					Horizontal_Move(blockLength,velocity,0);
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=8;
+				break;
+				//请求K210判断是否绿色，接到判断完毕指令后前进一格
+				case 8:
+					if(sendflag==0){
+						k210_cfg.mode=1;
+						k210_cfg.go=1;
+						dt.fun[0xf4].WTS=1;                   
+						sendflag=1;
+					}
+					if(k210.next==1){
+						stage = 9;
+						k210_cfg.go=0;
+						k210.next=0;
+						sendflag=0;
+					}
+					delaycnt = 25;
+					delay_flag = 1;
+				break;
+				case 9:
+					Horizontal_Move(blockLength,velocity,0);
+					step++;
+					delaycnt = 80;
+					delay_flag = 1;
+					stage=8;
+				break;
+				//惯导返航
+				case 10:
+					Horizontal_Move(5*blockLength,velocity,0);
+					delaycnt = 300;
+					delay_flag = 1;
+					stage=11;
+				break;
+				case 11:
+					Horizontal_Move(blockLength,velocity,90);
+					k210_cfg.mode=3;	
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=12;
+				break;
+				//根据十字位置判断飞机位置，K210控制飞机调整降落点
+				case 12:
+					Horizontal_Move(k210.xoffset,50,k210.xdirection*180+90);
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=13;
+					if(k210.land == 1)stage=60;
+				break;
+				case 13:
+					Horizontal_Move(k210.yoffset,50,k210.ydirection*180);
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=12;
+					if(k210.land == 1)stage=60;
+				break;
+				case 60:
+					OneKey_Land();
+				break;
+				}
+		//超时降落			
+		if(counter >= maxcnt){
+			OneKey_Land();
+			counter = 0;
+			stage = 0;
+			hmi.mode = 0;
+		}
+	}
+}
+
+
+void spreadPU(u8 height){
+		static u16 counter = 0;		//飞行时间计数
+		counter ++;
+		u16 maxcnt = 18000;				//最大飞行时间
+		static u8 stage = 0;			//流程执行阶段
+		static u8 sendflag=0;			//发送标志位
+		static u8 step = 1;				//格子走到第几步了
+		static u8 counterLED = 0;	//LED闪烁次数
+		u8 blockLength = 50;			//格子长度
+		u8 velocity = 50;					//前进速度
+		u8 vd = 90;	 							//转向角速度
+		LX_Change_Mode(3);				//切换到程控模式
+		
+		if(hmi.mode != hmi.oldmode){
+			counter = 0;
+			stage = 0;
+			sendflag = 0;
+			step = 0;
+			counterLED = 0;
 			hmi.oldmode = hmi.mode;
 		}
 		switch(step){
@@ -135,339 +366,154 @@ void spreadP(u8 height){
 			delay20();
 		}
 		else{
-			if(stage==0){
-				FC_Unlock();
-				k210.number = 4;
-				stage = 1;
-				delaycnt = 200;
-				delay_flag = 1;
-			}
-			else if(stage==1){
-				OneKey_Takeoff(height);
-				stage = 2;
-				delaycnt = 300;
-				delay_flag = 1;
-			}
-			else if(stage==2){
-				Horizontal_Move(4*blockLength,velocity,0);
-				stage = 3;
-				delaycnt = 250;
-				delay_flag = 1;
-			}
-			else if(stage == 3){
-				Right_Rotate(90,90);
-				step++;
-				delaycnt = 70;
-				delay_flag = 1;
-				stage=54;
-			}	
-			else if(stage==54){
-				Horizontal_Move(blockLength,velocity,0); 
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=50;
-			}
-			else if(stage==50){
-				k210_cfg.mode=2;	
-        dt.fun[0xf4].WTS=1; 
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=51;
-			}
-			else if(stage==51){
-				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
-				delaycnt = 70;
-				delay_flag = 1;
-				stage=52;
-				//if(k210.land == 1)stage=5;
-			}
-			else if(stage==52){
-				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
-				delaycnt = 70;
-				delay_flag = 1;
-				stage=4;
-				//if(k210.land == 1)stage=5;
-			}
-			
-			else if(stage==4){
-        if(sendflag==0){
-          k210_cfg.mode=1;
-					k210_cfg.go=1;
-          dt.fun[0xf4].WTS=1;                   
-          sendflag=1;
-        }
-				if(k210.next==1){
-					stage = 5;
-          k210_cfg.go=0;
-					k210.next=0;
-          sendflag=0;
-				}
-				stage = 5;
-				delaycnt = 25;
-				delay_flag = 1;
-			}
-			else if(stage == 5){
-				Horizontal_Move(blockLength,velocity,90);
-				step++;
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=10;
-			}
-			else if(stage==6){
-				Horizontal_Move(5*blockLength,velocity,0);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=7;
-			}
-			else if(stage==7){
-				Horizontal_Move(blockLength,velocity,90);
-				k210_cfg.mode=3;	
-        dt.fun[0xf4].WTS=1;
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=8;
-			}
-			else if(stage==8){
-				Horizontal_Move(k210.xoffset,50,k210.xdirection*180+90);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=9;
-				if(k210.land == 1)stage=10;
-			}
-			else if(stage==9){
-				Horizontal_Move(k210.yoffset,50,k210.ydirection*180);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=8;
-				if(k210.land == 1)stage=10;
-			}
-			else if(stage==60){
-				OneKey_Land();
-			}
-			else if(stage==10){
-        k210_cfg.mode=4;
-        dt.fun[0xf4].WTS=1;
-				stage=11;
-				delaycnt = 50;
-				delay_flag = 1;
-			}
-			else if(stage==11){
-				Vertical_Down(20,20);
-				stage= 12;
-				delaycnt = 50;
-				delay_flag = 1;
-			}
-			else if(stage==12){
-				blink();
-				delaycnt = 25;
-				delay_flag = 1;
-				counterLED++;
-				//2*数字
-				if(counterLED >= k210.number * 2){
+			switch(stage){
+				case 0:
+					FC_Unlock();
+					k210.number = 4;
+					stage = 1;
+					delaycnt = 200;
+					delay_flag = 1;
+				break;
+				case 1:
+					targetHeight = height;
+					OneKey_Takeoff(height);
+					stage = 2;
+					delaycnt = 250;
+					delay_flag = 1;
+				break;
+				case 2:
+					Horizontal_Move(4*blockLength,velocity,0);
+					stage = 3;
+					delaycnt = 250;
+					delay_flag = 1;
+				break;
+				case 3:
+					Right_Rotate(90,90);
+					step++;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=4;
+				break;	
+				//经验调整
+				case 4:
+					Horizontal_Move(blockLength,velocity,0); 
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=5;
+				break;
+				//K210开启字母识别，根据A位置调整
+				case 5:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=6;
+				break;
+				case 6:
+					Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=7;
+				break;
+				case 7:
+					Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=8;
+				break;
+				//请求K210判断是否绿色，接到判断完毕指令后前进一格
+				case 8:
+					if(sendflag==0){
+						k210_cfg.mode=1;
+						k210_cfg.go=1;
+						dt.fun[0xf4].WTS=1;                   
+						sendflag=1;
+					}
+					if(k210.next==1){
+						stage = 5;
+						k210_cfg.go=0;
+						k210.next=0;
+						sendflag=0;
+					}
+					stage = 9;
+					delaycnt = 25;
+					delay_flag = 1;
+				break;
+				case 9:
+					Horizontal_Move(blockLength,velocity,0);
+					step++;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=8;
+				break;
+				//惯导返航
+				case 10:
+					Horizontal_Move(5*blockLength,velocity,0);
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=11;
+				break;
+				case 11:
+					Horizontal_Move(blockLength,velocity,90);
+					k210_cfg.mode=3;	
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=12;
+				break;
+				//根据十字位置判断飞机位置，K210控制飞机调整降落点
+				case 12:
+					Horizontal_Move(k210.xoffset,50,k210.xdirection*180+90);
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=13;
+					if(k210.land == 1)stage=60;
+				break;
+				case 13:
+					Horizontal_Move(k210.yoffset,50,k210.ydirection*180);
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=12;
+					if(k210.land == 1)stage=60;
+				break;
+				//寻找杆子和二维码位置
+				case 20:
+					k210_cfg.mode=4;
+					dt.fun[0xf4].WTS=1;
+					stage=21;
+					delaycnt = 50;
+					delay_flag = 1;
+				break;
+				case 21:
+					openmv_cfg.mode = 1;
+					dt.fun[0xf5].WTS=1;
+					stage=21;
+					delaycnt = 50;
+					delay_flag = 1;
+				break;
+				case 41:
+					Vertical_Down(20,20);
+					stage= 12;
+					delaycnt = 50;
+					delay_flag = 1;
+				break;
+				//LED依据识别到的数字闪烁
+				case 31:
+					blink();
+					delaycnt = 25;
+					delay_flag = 1;
+					counterLED++;
+					if(counterLED >= k210.number * 2){
+						//下一阶段
+					}
+				break;
+				case 60:
 					OneKey_Land();
-					//hmi.mode=0;
+				break;
+				//2*数字
+				break;
 				}
-			}
-				
-		if(counter >= maxcnt){
-			OneKey_Land();
-			counter = 0;
-			stage = 0;
-			hmi.mode = 0;
-		}
-		
-	}
-}
-
-
-void spreadPU(u8 height){
-		static u16 counter = 0;
-		counter ++;
-		u16 maxcnt = 10000;
-		static u8 sendflag=0;
-		static u8 stage = 0;
-		static u8 step = 0;
-		static u8 counterLED=0;
-		u8 blockLength = 50;
-		u8 velocity = 50;
-		u8 vd = 90;	 
-		LX_Change_Mode(3);
-		
-		if(hmi.mode != hmi.oldmode){
-			counter = 0;
-			stage = 0;
-			hmi.oldmode = hmi.mode;
-		}
-		switch(step){
-			case 4:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 8:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 11:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 12:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 14:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 15:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 17:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 18:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 20:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 21:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 23:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 24:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 30:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-					stage = 6;
-				break;
-		}
-		
-		if(delay_flag){
-			delay20();
-		}
-		else{
-			if(stage==0){
-				FC_Unlock();
-				k210.number=4;	//IHWT
-				stage = 1;
-				delaycnt = 200;
-				delay_flag = 1;
-			}
-			else if(stage==1){
-				OneKey_Takeoff(height);
-				stage = 2;
-				delaycnt = 150;
-				delay_flag = 1;
-			}
-			else if(stage==2){
-				Horizontal_Move(4*blockLength,velocity,0);
-				stage = 3;
-				delaycnt = 200;
-				delay_flag = 1;
-			}
-			else if(stage == 3){
-				Right_Rotate(90,90);
-				step++;
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=50;
-			}	
-			else if(stage==50){
-				k210_cfg.mode=2;	
-        dt.fun[0xf4].WTS=1; 
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=51;
-			}
-			else if(stage==51){
-				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=52;
-				//if(k210.land == 1)stage=5;
-			}
-			else if(stage==52){
-				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=4;
-				//if(k210.land == 1)stage=5;
-			}
-			
-			else if(stage==4){
-        if(sendflag==0){
-          k210_cfg.mode=1;
-					k210_cfg.go=1;
-          dt.fun[0xf4].WTS=1;                   
-          sendflag=1;
-        }
-				if(k210.next==1){
-					stage = 5;
-          k210_cfg.go=0;
-					k210.next=0;
-          sendflag=0;
-				}
-				delaycnt = 25;
-				delay_flag = 1;
-			}
-			else if(stage == 5){
-				Horizontal_Move(blockLength,velocity,0);
-				step++;
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=4;
-			}
-			else if(stage==6){
-				Horizontal_Move(blockLength,velocity,270);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=7;
-			}
-			else if(stage==7){
-				Horizontal_Move(blockLength,velocity,0);
-				k210_cfg.mode=3;	
-        dt.fun[0xf4].WTS=1;
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=8;
-			}
-			else if(stage==8){
-				Horizontal_Move(openmv.xoffset,10,openmv.xdirection*180+90);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=9;
-				if(openmv.ready == 1)stage=10;
-			}
-			else if(stage==9){
-				Horizontal_Move(openmv.yoffset,10,openmv.ydirection*180);
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=8;
-				if(openmv.ready == 1)stage=10;
-			}
-			else if(stage==10){
-				blink();
-				delaycnt = 30;
-				delay_flag = 1;
-				counterLED++;
-				if(counterLED >= k210.number*2) stage = 10;
-			}
-			else if(stage==10){
-				OneKey_Land();
-			}
-				
+		//超时降落			
 		if(counter >= maxcnt){
 			OneKey_Land();
 			counter = 0;
@@ -479,20 +525,9 @@ void spreadPU(u8 height){
 
 
 void customF(){
-	static u16 counter = 0;
-	counter ++;
-	u16 maxcnt = 10000;
-	static u8 sendflag=0;
-	static u8 stage = 0;
-	static u8 step = 0;
-	static u8 counterLED = 0;
-	u8 blockLength = 50;
-	u8 velocity = 50;
-	u8 vd = 90;	 
 	LX_Change_Mode(3);
 	k210_cfg.mode=4;
   dt.fun[0xf4].WTS=1;
-	stage=11;
 	delaycnt = 50;
 	delay_flag = 1;
 	/*if(delay_flag){

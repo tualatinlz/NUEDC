@@ -9,6 +9,7 @@
 #include "User_Task.h"
 #include "Drv_AnoOf.h"
 #include "LX_FC_Fun.h"
+u8 targetHeight = 150;
 //////////////////////////////////////////////////////////////////////
 //用户程序调度器
 //////////////////////////////////////////////////////////////////////
@@ -57,7 +58,6 @@ static void Loop_20Hz(void) //50ms执行一次
 
 static void Loop_2Hz(void) //500ms执行一次，固定飞机高度
 {
-	u8 targetHeight = 150;
 	if(fc_sta.take_off){
 		//高度稳定
 		if(ano_of.of_alt_cm - targetHeight > 5) Vertical_Down(ano_of.of_alt_cm - targetHeight,5);
