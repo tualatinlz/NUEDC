@@ -1,14 +1,17 @@
 # main.py -- put your code here!
 THRESHOLD = (0, 46, -22, 5, -8, 23) # Grayscale threshold for dark things...
 import sensor, image, time ,utime,pyb,math
+from pyb import Pin
 from pyb import LED
 from pyb import UART
 
 sensor.reset()
-#sensor.set_vflip(True)
+sensor.set_vflip(True)
 #sensor.set_hmirror(True)
 #sensor.set_contrast(1)
 #sensor.set_gainceiling(16)
+sensor.set_auto_gain(False) # True开启；False关闭，使用颜色追踪时，需关闭
+sensor.set_auto_whitebal(False) # True开启；False关闭，使用颜色追踪时，需关闭
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA) # 80x60 (4,800 pixels) - O(N^2) max = 2,3040,000.
 sensor.set_windowing((160, 120))
@@ -32,47 +35,24 @@ class uart_ultrasonic_ini (object):
         self.dis=0
         self.nownn=0
         self.uart_B= UART(1,9600)
-    def send_dis(self,dat):
-        a =[0xAA,0xFF,0xf1,0x03,0x03,0x00,0x00,0x00,0x00]
-        a[6]=dat%256
-        a[5]=int(dat/256)
-        sum_check=0
-        add_check=0
-        for i in range(0,a[3]+4):
-            sum_check += a[i]
-            add_check += sum_check
-        a[a[3]+4] = sum_check%256
-        a[a[3]+5] = add_check%256
-        a=bytes(a)
-        if(a[5]==0x00 and a[6]==0x00):
-            return 0
-        uart_A.write(a)
-        return a
 
     def get_dis(self):
+        #print(1)
+        a=[0x55]
+        a=bytes(a)
+        self.uart_B.write(a)
+        time.sleep_ms(500)
         if(self.uart_B.any()):
             txt=self.uart_B.read()
             if(len(txt)>=2):
                 self.dis=txt[0]*256+txt[1]
-                self.send_dis(self.dis)
-                print(self.dis)
-                return self.dis
+                print("chaosheng%d"%self.dis)
+                return int(self.dis/10)
 
-    def send_time(self,period_time):
-        if(self.nownn==0):
-            self.nownn=time.ticks_ms()
-        elif(time.ticks_ms()-self.nownn>period_time):
-            a=[0x55]
-            a=bytes(a)
-            self.uart_B.write(a)
-            self.nownn=time.ticks_ms()
-        else:
-            self.get_dis()
-
-
+mode3=uart_ultrasonic_ini()
 class find_gan(object):
     def __init__(self):
-        self.GRAYSCALE_THRESHOLD = [(0, 46, -22, 5, -8, 23)]#灰度图
+        self.GRAYSCALE_THRESHOLD = [(0, 12, -15, 5, -8, 23)]#灰度图
         #GRAYSCALE_THRESHOLD =[(0, 45, -9, 24, -4, 17)]#寻杆阈值设置（彩色图）
         self.ROIS = [ # [ROI, weight]
                 (0, 100, 160, 20, 0.7), # 你需要为你的应用程序调整权重
@@ -84,28 +64,35 @@ class find_gan(object):
         for r in self.ROIS: self.weight_sum += r[4] # r[4] is the roi weight.
         #计算权值和。遍历上面的三个矩形，r[4]即每个矩形的权值。
 
-    def send_dis(self,datal):
-        a =[0xAA,0xFF,0xf1,0x03,0x04,0x00,0x00,0x00,0x00]
-        if datal>=0:
-            a[6]=datal
-        else:
-            a[6]=abs(datal)
-            a[5]=1
-        sum_check=0;
-        add_check=0;
+    #串口发送位置坐标
+    def get_dis(self,wei,dat):
+        a =[0xAA,0xFF,0xf1,0x04,0x00,0x00,0x00,0x00,0x00,0x00]
+        if(wei==0):
+            a[4]=0x02
+            a[5]=0x00
+        if(wei==1):
+            a[4]=0x02
+            a[5]=0x01
+        if(wei==2):
+            a[4]=0x01
+            a[5]=0x01
+        if(wei==3):
+            a[4]=0x01
+            a[5]=0x00
+        dat=abs(dat)
+        a[7]=dat%256
+        a[6]=int(dat/256)
+        sum_check=0
+        add_check=0
         for i in range(0,a[3]+4):
             sum_check += a[i]
             add_check += sum_check
         a[a[3]+4] = sum_check%256
         a[a[3]+5] = add_check%256
         a=bytes(a)
-        if(a[5]==0x00 and a[6]==0x00):
-            return 0
-        print(a[5])
-        print(a[6])
+        #print(a)
         uart.write(a)
         return a
-    #串口发送位置坐标
 
 
     def find(self,img):
@@ -113,7 +100,7 @@ class find_gan(object):
         most_pixels = 0
         #利用颜色识别分别寻找三个矩形区域内的线段
         for r in self.ROIS:
-            blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, roi=r[0:4], merge=True)
+            blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, roi=r[0:4], pixels_threshold=80, area_threshold=80, merge=True, margin=5)
             # r[0:4] is roi tuple.
             #找到视野中的线,merge=true,将找到的图像区域合并成一个
 
@@ -142,31 +129,30 @@ class find_gan(object):
         #中间公式
 
         # 将center_pos转换为一个偏角。我们用的是非线性运算，所以越偏离直线，响应越强。
-        # 非线性操作很适合用于这样的算法的输出，以引起响应“触发器”。
-        deflection_angle = 0
-        #机器人应该转的角度
+        #偏移厘米
+        deflection_length=(center_pos-80)*1
+        #deflection_angle = -math.atan((center_pos-80)/60)
+        #图像大小为QQVGA 160x120.
+        deflection_length=int(deflection_length)
+        print(deflection_length)
+        if(deflection_length>10):
+            self.get_dis(3,abs(deflection_length))
+        elif(deflection_length<-10):
+            self.get_dis(2,abs(deflection_length))
+        elif(True):
+            dis_n=mode3.get_dis()
+        elif(dis_n<200 and dis_n>50):#2米向前走
+            print("jin")
+            self.get_dis(0,20)
+        else:
+            True #开始识别
 
-        # 80是X的一半，60是Y的一半。
-        # 下面的等式只是计算三角形的角度，其中三角形的另一边是中心位置与中心的偏差，相邻边是Y的一半。
-        # 这样会将角度输出限制在-45至45度左右。（不完全是-45至45度）。
 
-        deflection_angle = -math.atan((center_pos-80)/60)
-        #角度计算.80 60 分别为图像宽和高的一半，图像大小为QQVGA 160x120.
-        #注意计算得到的是弧度值
-
-        deflection_angle = math.degrees(deflection_angle)
-        #将计算结果的弧度值转化为角度值
-
-        # 现在你有一个角度来告诉你该如何转动机器人。
-        # 通过该角度可以合并最靠近机器人的部分直线和远离机器人的部分直线，以实现更好的预测。
-        center_pos=center_pos-80
-        self.send_dis(int(center_pos))
-        print("Turn distance: %f" % center_pos)
+        #如果距离够近则转模式
+        #time.sleep_ms(2000)
         #将结果打印在terminal中
 
 mode2=find_gan()
-mode3=uart_ultrasonic_ini()
-#uart.irq(trigger = UART.IRQ_RXIDLE,handler = change_mod())
 while(True):
     clock.tick()
     img = sensor.snapshot()#.binary([THRESHOLD])
