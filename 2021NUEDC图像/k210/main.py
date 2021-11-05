@@ -1,4 +1,3 @@
-# Untitled - By: Tualatin - 周四 7月 22 2021
 #THRESHOLD = (38, 100, -25, 28, -49, 60)
 import time,utime,machine,image,sensor,lcd,math
 from machine import Timer
@@ -13,8 +12,8 @@ sensor.set_framesize(sensor.QVGA)
 sensor.set_windowing((224,224))
 sensor.set_auto_gain(False) # True开启；False关闭，使用颜色追踪时，需关闭
 sensor.set_auto_whitebal(False) # True开启；False关闭，使用颜色追踪时，需关闭
-sensor.set_hmirror(0)
-sensor.set_vflip(1)
+#sensor.set_hmirror(1)
+#sensor.set_vflip(1)
 sensor.run(1)
 sensor.skip_frames(time = 2000)
 fm.register(8, fm.fpioa.UART1_RX, force=True)
@@ -27,7 +26,7 @@ fm.register(21,fm.fpioa.GPIO2)
 laser_out=GPIO(GPIO.GPIO2,GPIO.OUT)
 laser_out.value(0)
 class ctrl(object):
-    work_mode = 0x03 #工作模式，可以通过串口设置成其他模式
+    work_mode = 0x00 #工作模式，可以通过串口设置成其他模式
 
 ctrl=ctrl()
 #YOLOV2模型
@@ -43,16 +42,30 @@ class kkpu(object):
             L.append(float(i))
         self.anchor=tuple(L)
         f.close()
-        self.a = kpu.init_yolo2(self.task, 0.8, 0.3, 5, self.anchor)
+        self.a = kpu.init_yolo2(self.task, 0.6, 0.3, 5, self.anchor)
         labels_name = "{}.txt".format(labels)
         f=open(labels_name,"r")
         labels_txt=f.read()
         self.labels = labels_txt.split(",")
         f.close()
 
-    def check_num(obj):
-        a =[0xAA,0xFF,0xf1,0x03,0x01,0x00,0x00,0x00,0x00]
-        a[5]=obj
+    def get_dis(self,wei,dat):
+        a =[0xAA,0xFF,0xf1,0x04,0x00,0x00,0x00,0x00,0x00,0x00]
+        if(wei==0):
+            a[4]=0x02
+            a[5]=0x00
+        if(wei==1):
+            a[4]=0x02
+            a[5]=0x01
+        if(wei==2):
+            a[4]=0x01
+            a[5]=0x01
+        if(wei==3):
+            a[4]=0x01
+            a[5]=0x00
+        dat=abs(dat)
+        a[7]=dat%256
+        a[6]=int(dat/256)
         sum_check=0
         add_check=0
         for i in range(0,a[3]+4):
@@ -61,6 +74,8 @@ class kkpu(object):
         a[a[3]+4] = sum_check%256
         a[a[3]+5] = add_check%256
         a=bytes(a)
+        print(a)
+        uart_A.write(a)
         return a
 
     def runn(self,img):#运行模型并通过串口发送识别到的编号
@@ -74,17 +89,32 @@ class kkpu(object):
         else:
             a = lcd.display(img)
         if code:
-            chec_num=kkpu.check_num(int(code[0].classid()))#int(labels[int(code[0].classid())])#
-            uart_A.write(chec_num)
-        else:
-            chec_num=kkpu.check_num(10)
-            uart_A.write(chec_num)
+            for i in code:
+                num_x=i.x()+i.w()/2
+                num_y=i.y()+i.h()/2
+                    #int(labels[int(code[0].classid())])
+                num_x=(112-num_x)*0.476
+                num_y=(112-num_y)*0.476
+            if(int(num_x)>0):
+                self.get_dis(1,int(num_x))
+            else:
+                self.get_dis(0,int(num_x))
+            if(int(num_y)>0):
+                self.get_dis(2,int(num_y))
+            else:
+                self.get_dis(3,int(num_y))
+            #uart_A.write(chec_num,)#0,1,2,3 前 后 左 右
+            laser_out.value(1)
+            utime.sleep_ms(5000) # 记得清
+            laser_out.value(0)
+            utime.sleep_ms(1000)
+            ctrl.work_mode=0x00
 
 class bar_code(object):
     def __init__(self):
         True
     def send_num(self,obj):
-        a =[0xAA,0xFF,0xf1,0x03,0x01,0x00,0x00,0x00,0x00]
+        a =[0xAA,0xFF,0xf1,0x02,0x04,0x00,0x00,0x00]
         a[5]=obj
         sum_check=0
         add_check=0
@@ -95,6 +125,7 @@ class bar_code(object):
         a[a[3]+5] = add_check%256
         a=bytes(a)
         uart_A.write(a)
+        print(a)
         return a
     def get_num(self):
         if(uart_B.any()):
@@ -103,7 +134,7 @@ class bar_code(object):
             if(len(txt)>=3):
                 if(txt[0]==0x30):
                     if(txt[1]==0x30):
-                        self.send_num(txt[3])
+                        self.send_num(txt[3]-48)
                         print(txt[3]-48)
 
 #寻找淡绿色色块
@@ -115,6 +146,7 @@ class dot_green(object):
         self.x=0
         self.y=0
         self.THRESHOLD = (11, 75, -24, -5, 1, 19)#淡绿色阈值
+
     def laser_b(self):
         for i in range(0,2):
             laser_out.value(1)
@@ -188,6 +220,19 @@ class dot(object):
         self.x=0
         self.y=0
         self.THRESHOLD = (72, 99, -6, 11, -10, 11)
+    def send_num(self,obj):
+        a =[0xAA,0xFF,0xf1,0x03,0x01,0x00,0x00,0x00,0x00]
+        a[5]=obj
+        sum_check=0
+        add_check=0
+        for i in range(0,a[3]+4):
+            sum_check += a[i]
+            add_check += sum_check
+        a[a[3]+4] = sum_check%256
+        a[a[3]+5] = add_check%256
+        a=bytes(a)
+        uart_A.write(a)
+        return a
     def find_dot(self,img):
         #thresholds为黑色物体颜色的阈值，是一个元组，需要用括号［ ］括起来可以根据不同的颜色阈值更改；pixels_threshold 像素个数阈值，
         #如果色块像素数量小于这个值，会被过滤掉area_threshold 面积阈值，如果色块被框起来的面积小于这个值，会被过滤掉；merge 合并，如果
@@ -208,10 +253,15 @@ class dot(object):
                 img.draw_cross(self.x, self.y, color=127, size = 10)
                 #在图像中画一个圆；x,y是坐标；5是圆的半径；color可根据自己的喜好设置
                 img.draw_circle(self.x, self.y, 5, color = 127)
+
                 print("centre_x = %d, centre_y = %d"%(self.x, self.y))
 
-        #判断标志位 赋值像素点数据
 
+        #判断标志位 赋值像素点数据
+        if(self.ok==1):
+            x_wei=(160-self.x)*0.476
+            y_wei=(120-self.y)*0.476
+            #self.send_num()
         #清零标志位
         self.pixels = 0
         self.ok = 0
@@ -221,7 +271,7 @@ object1=dot_green()
 #声明条码转发
 object2=bar_code()
 #声明YOLO类(模型名称，anchor，lable)
-#object3=kkpu('out','anchors','lable')
+object3=kkpu('out','anchors','lable')
 #声明寻点类
 object4=dot()
 

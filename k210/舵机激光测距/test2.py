@@ -1,7 +1,4 @@
-# Untitled - By: Tualatin - 周四 7月 22 2021
-THRESHOLD = (38, 100, -25, 28, -49, 60)
 import time,utime,machine,image,sensor,lcd
-from pid import PID
 from machine import Timer,PWM
 from Maix import GPIO
 from fpioa_manager import fm
@@ -73,7 +70,7 @@ class Steering_motor():
                     print(testt)
                     if(testt<=300):
                         print("find pole!!!!!! %d"%i)
-                        utime.sleep_ms(1000)
+                        utime.sleep_ms(100)
 
         else:
             for i in range(self._angle,setAngle+1,-1):
@@ -85,7 +82,7 @@ class Steering_motor():
                     print(testt)
                     if(testt<=300):
                         print("find pole!!!!!! %d"%i)
-                        utime.sleep_ms(1000)
+                        utime.sleep_ms(100)
         self._angle = setAngle
 
     def get_dis(self):
@@ -98,7 +95,7 @@ class Steering_motor():
 
 
 
-steering=Steering_motor(25,Steering_motor.Timer_2,Steering_motor.Channel_1)
+steering=Steering_motor(24,Steering_motor.Timer_2,Steering_motor.Channel_1)
 while(1):
 
     steering.angle(135)

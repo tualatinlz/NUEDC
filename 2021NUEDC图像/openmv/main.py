@@ -1,9 +1,8 @@
 # main.py -- put your code here!
-THRESHOLD = (5, 70, -23, 15, -57, 0) # Grayscale threshold for dark things...
+THRESHOLD = (0, 46, -22, 5, -8, 23) # Grayscale threshold for dark things...
 import sensor, image, time ,utime,pyb,math
 from pyb import LED
 from pyb import UART
-THRESHOLD = (0, 105)
 
 sensor.reset()
 #sensor.set_vflip(True)
@@ -12,12 +11,11 @@ sensor.reset()
 #sensor.set_gainceiling(16)
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA) # 80x60 (4,800 pixels) - O(N^2) max = 2,3040,000.
-sensor.set_windowing((160, 160))
+sensor.set_windowing((160, 120))
 sensor.skip_frames(time = 2000)     # WARNING: If you use QQVGA it may take seconds
 clock = time.clock()                # to process a frame sometimes.
 class ctrl(object):
     work_mode = 0x01 #工作模式，可以通过串口设置成其他模式
-    num_flag =0
 ctrl=ctrl()
 def change_mod():
     if(uart.any()):
@@ -25,13 +23,56 @@ def change_mod():
         if(txt[0]==0xAA):
             if(txt[5]==0x01):
                 ctrl.work_mode=0x01
-            if(txt[5]==0x02):
-                ctrl.num_flag=1
 
 uart = UART(3,115200)
+
+class uart_ultrasonic_ini (object):
+
+    def __init__(self):
+        self.dis=0
+        self.nownn=0
+        self.uart_B= UART(1,9600)
+    def send_dis(self,dat):
+        a =[0xAA,0xFF,0xf1,0x03,0x03,0x00,0x00,0x00,0x00]
+        a[6]=dat%256
+        a[5]=int(dat/256)
+        sum_check=0
+        add_check=0
+        for i in range(0,a[3]+4):
+            sum_check += a[i]
+            add_check += sum_check
+        a[a[3]+4] = sum_check%256
+        a[a[3]+5] = add_check%256
+        a=bytes(a)
+        if(a[5]==0x00 and a[6]==0x00):
+            return 0
+        uart_A.write(a)
+        return a
+
+    def get_dis(self):
+        if(self.uart_B.any()):
+            txt=self.uart_B.read()
+            if(len(txt)>=2):
+                self.dis=txt[0]*256+txt[1]
+                self.send_dis(self.dis)
+                print(self.dis)
+                return self.dis
+
+    def send_time(self,period_time):
+        if(self.nownn==0):
+            self.nownn=time.ticks_ms()
+        elif(time.ticks_ms()-self.nownn>period_time):
+            a=[0x55]
+            a=bytes(a)
+            self.uart_B.write(a)
+            self.nownn=time.ticks_ms()
+        else:
+            self.get_dis()
+
+
 class find_gan(object):
     def __init__(self):
-        self.GRAYSCALE_THRESHOLD = [(0, 64)]#灰度图
+        self.GRAYSCALE_THRESHOLD = [(0, 46, -22, 5, -8, 23)]#灰度图
         #GRAYSCALE_THRESHOLD =[(0, 45, -9, 24, -4, 17)]#寻杆阈值设置（彩色图）
         self.ROIS = [ # [ROI, weight]
                 (0, 100, 160, 20, 0.7), # 你需要为你的应用程序调整权重
@@ -123,15 +164,16 @@ class find_gan(object):
         print("Turn distance: %f" % center_pos)
         #将结果打印在terminal中
 
-mode2=find_gan();
+mode2=find_gan()
+mode3=uart_ultrasonic_ini()
 #uart.irq(trigger = UART.IRQ_RXIDLE,handler = change_mod())
 while(True):
     clock.tick()
     img = sensor.snapshot()#.binary([THRESHOLD])
     #img.lens_corr(1.0)
-
+    change_mod()
     if (ctrl.work_mode==0x00):#MODE1 待机
-        change_mod()
+        True
     if (ctrl.work_mode==0x01):#MODE2 开始找杆
         mode2.find(img)
 
