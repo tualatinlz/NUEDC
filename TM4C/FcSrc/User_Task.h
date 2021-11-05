@@ -8,6 +8,7 @@ void rotate(u16 r,u8 direction);
 void UserTask_OneKeyCmd(void);
 void spreadP(u8 height);
 void spreadPU(u8 height);
+void customF();
 void blink(void);
 //void solveMaze(u8 height);
 //void goMaze(u8 height);

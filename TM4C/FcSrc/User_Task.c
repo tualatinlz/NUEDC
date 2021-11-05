@@ -1,5 +1,6 @@
 #include "User_Task.h"
 #include "LX_FC_Fun.h"
+#include "Drv_OpenMV.h"
 #include "Drv_K210.h"
 #include "Drv_HMI.h"
 #include "Drv_AnoOf.h"
@@ -38,7 +39,7 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x04:spreadP(150);
 				break;
-			case 0x05:spreadPU(150);
+			case 0x05:customF();
 				break;
 			case 0x10:Horizontal_Calibrate();
 								hmi.mode = 0;
@@ -61,6 +62,7 @@ void spreadP(u8 height){
 		static u8 sendflag=0;
 		static u8 stage = 0;
 		static u8 step = 0;
+		static u8 counterLED = 0;
 		u8 blockLength = 50;
 		u8 velocity = 50;
 		u8 vd = 90;	 
@@ -123,8 +125,10 @@ void spreadP(u8 height){
 			case 30:Left_Rotate(90,vd);
 					delaycnt=50;
 					delay_flag=1;
-					stage = 5;
+					stage = 6;
 				break;
+				default:
+					break;
 		}
 		
 		if(delay_flag){
@@ -133,6 +137,7 @@ void spreadP(u8 height){
 		else{
 			if(stage==0){
 				FC_Unlock();
+				k210.number = 4;
 				stage = 1;
 				delaycnt = 200;
 				delay_flag = 1;
@@ -140,43 +145,73 @@ void spreadP(u8 height){
 			else if(stage==1){
 				OneKey_Takeoff(height);
 				stage = 2;
-				delaycnt = 150;
+				delaycnt = 300;
 				delay_flag = 1;
 			}
 			else if(stage==2){
 				Horizontal_Move(4*blockLength,velocity,0);
 				stage = 3;
-				delaycnt = 200;
+				delaycnt = 250;
 				delay_flag = 1;
 			}
 			else if(stage == 3){
 				Right_Rotate(90,90);
 				step++;
+				delaycnt = 70;
+				delay_flag = 1;
+				stage=54;
+			}	
+			else if(stage==54){
+				Horizontal_Move(blockLength,velocity,0); 
 				delaycnt = 50;
+				delay_flag = 1;
+				stage=50;
+			}
+			else if(stage==50){
+				k210_cfg.mode=2;	
+        dt.fun[0xf4].WTS=1; 
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=51;
+			}
+			else if(stage==51){
+				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+				delaycnt = 70;
+				delay_flag = 1;
+				stage=52;
+				//if(k210.land == 1)stage=5;
+			}
+			else if(stage==52){
+				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+				delaycnt = 70;
 				delay_flag = 1;
 				stage=4;
+				//if(k210.land == 1)stage=5;
 			}
-			else if(stage == 4){
-				Horizontal_Move(blockLength,velocity,0);
-				step++;
-				delaycnt = 50;
-				delay_flag = 1;
-				stage=5;
-			}
-			else if(stage==5){
+			
+			else if(stage==4){
         if(sendflag==0){
-          k210_cfg.go=1;
+          k210_cfg.mode=1;
+					k210_cfg.go=1;
           dt.fun[0xf4].WTS=1;                   
           sendflag=1;
         }
 				if(k210.next==1){
-					stage = 4;
+					stage = 5;
           k210_cfg.go=0;
 					k210.next=0;
           sendflag=0;
 				}
+				stage = 5;
 				delaycnt = 25;
 				delay_flag = 1;
+			}
+			else if(stage == 5){
+				Horizontal_Move(blockLength,velocity,90);
+				step++;
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=10;
 			}
 			else if(stage==6){
 				Horizontal_Move(5*blockLength,velocity,0);
@@ -186,26 +221,52 @@ void spreadP(u8 height){
 			}
 			else if(stage==7){
 				Horizontal_Move(blockLength,velocity,90);
+				k210_cfg.mode=3;	
+        dt.fun[0xf4].WTS=1;
 				delaycnt = 50;
 				delay_flag = 1;
 				stage=8;
 			}
 			else if(stage==8){
-				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+				Horizontal_Move(k210.xoffset,50,k210.xdirection*180+90);
 				delaycnt = 50;
 				delay_flag = 1;
 				stage=9;
 				if(k210.land == 1)stage=10;
 			}
 			else if(stage==9){
-				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+				Horizontal_Move(k210.yoffset,50,k210.ydirection*180);
 				delaycnt = 50;
 				delay_flag = 1;
 				stage=8;
 				if(k210.land == 1)stage=10;
 			}
-			else if(stage==10){
+			else if(stage==60){
 				OneKey_Land();
+			}
+			else if(stage==10){
+        k210_cfg.mode=4;
+        dt.fun[0xf4].WTS=1;
+				stage=11;
+				delaycnt = 50;
+				delay_flag = 1;
+			}
+			else if(stage==11){
+				Vertical_Down(20,20);
+				stage= 12;
+				delaycnt = 50;
+				delay_flag = 1;
+			}
+			else if(stage==12){
+				blink();
+				delaycnt = 25;
+				delay_flag = 1;
+				counterLED++;
+				//2*数字
+				if(counterLED >= k210.number * 2){
+					OneKey_Land();
+					//hmi.mode=0;
+				}
 			}
 				
 		if(counter >= maxcnt){
@@ -214,6 +275,7 @@ void spreadP(u8 height){
 			stage = 0;
 			hmi.mode = 0;
 		}
+		
 	}
 }
 
@@ -225,6 +287,7 @@ void spreadPU(u8 height){
 		static u8 sendflag=0;
 		static u8 stage = 0;
 		static u8 step = 0;
+		static u8 counterLED=0;
 		u8 blockLength = 50;
 		u8 velocity = 50;
 		u8 vd = 90;	 
@@ -287,7 +350,7 @@ void spreadPU(u8 height){
 			case 30:Left_Rotate(90,vd);
 					delaycnt=50;
 					delay_flag=1;
-					stage = 5;
+					stage = 6;
 				break;
 		}
 		
@@ -297,6 +360,7 @@ void spreadPU(u8 height){
 		else{
 			if(stage==0){
 				FC_Unlock();
+				k210.number=4;	//IHWT
 				stage = 1;
 				delaycnt = 200;
 				delay_flag = 1;
@@ -318,23 +382,39 @@ void spreadPU(u8 height){
 				step++;
 				delaycnt = 50;
 				delay_flag = 1;
-				stage=4;
-			}
-			else if(stage == 4){
-				Horizontal_Move(blockLength,velocity,0);
-				step++;
+				stage=50;
+			}	
+			else if(stage==50){
+				k210_cfg.mode=2;	
+        dt.fun[0xf4].WTS=1; 
 				delaycnt = 50;
 				delay_flag = 1;
-				stage=5;
+				stage=51;
 			}
-			else if(stage==5){
+			else if(stage==51){
+				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=52;
+				//if(k210.land == 1)stage=5;
+			}
+			else if(stage==52){
+				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=4;
+				//if(k210.land == 1)stage=5;
+			}
+			
+			else if(stage==4){
         if(sendflag==0){
-          k210_cfg.go=1;
+          k210_cfg.mode=1;
+					k210_cfg.go=1;
           dt.fun[0xf4].WTS=1;                   
           sendflag=1;
         }
 				if(k210.next==1){
-					stage = 4;
+					stage = 5;
           k210_cfg.go=0;
 					k210.next=0;
           sendflag=0;
@@ -342,31 +422,47 @@ void spreadPU(u8 height){
 				delaycnt = 25;
 				delay_flag = 1;
 			}
+			else if(stage == 5){
+				Horizontal_Move(blockLength,velocity,0);
+				step++;
+				delaycnt = 50;
+				delay_flag = 1;
+				stage=4;
+			}
 			else if(stage==6){
-				Horizontal_Move(5*blockLength,velocity,0);
+				Horizontal_Move(blockLength,velocity,270);
 				delaycnt = 50;
 				delay_flag = 1;
 				stage=7;
 			}
 			else if(stage==7){
-				Horizontal_Move(blockLength,velocity,90);
+				Horizontal_Move(blockLength,velocity,0);
+				k210_cfg.mode=3;	
+        dt.fun[0xf4].WTS=1;
 				delaycnt = 50;
 				delay_flag = 1;
 				stage=8;
 			}
 			else if(stage==8){
-				Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+				Horizontal_Move(openmv.xoffset,10,openmv.xdirection*180+90);
 				delaycnt = 50;
 				delay_flag = 1;
 				stage=9;
-				if(k210.land == 1)stage=10;
+				if(openmv.ready == 1)stage=10;
 			}
 			else if(stage==9){
-				Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+				Horizontal_Move(openmv.yoffset,10,openmv.ydirection*180);
 				delaycnt = 50;
 				delay_flag = 1;
 				stage=8;
-				if(k210.land == 1)stage=10;
+				if(openmv.ready == 1)stage=10;
+			}
+			else if(stage==10){
+				blink();
+				delaycnt = 30;
+				delay_flag = 1;
+				counterLED++;
+				if(counterLED >= k210.number*2) stage = 10;
 			}
 			else if(stage==10){
 				OneKey_Land();
@@ -381,9 +477,40 @@ void spreadPU(u8 height){
 	}
 }
 
+
+void customF(){
+	static u16 counter = 0;
+	counter ++;
+	u16 maxcnt = 10000;
+	static u8 sendflag=0;
+	static u8 stage = 0;
+	static u8 step = 0;
+	static u8 counterLED = 0;
+	u8 blockLength = 50;
+	u8 velocity = 50;
+	u8 vd = 90;	 
+	LX_Change_Mode(3);
+	k210_cfg.mode=4;
+  dt.fun[0xf4].WTS=1;
+	stage=11;
+	delaycnt = 50;
+	delay_flag = 1;
+	/*if(delay_flag){
+			delay20();
+	}
+	else{
+		blink();
+		delaycnt = 25;
+		delay_flag = 1;
+		counterLED++;
+		//2*数字
+		if(counterLED >= 8) hmi.mode = 0;
+	}*/
+	hmi.mode = 0;
+}
 //控制LED闪烁，调用一次切换一次状态
 void blink(void){
-	u8 color = 1;
+	u8 color = 2;
 	static u8 clicked = 0;
 	if(clicked){
 		clicked=0;

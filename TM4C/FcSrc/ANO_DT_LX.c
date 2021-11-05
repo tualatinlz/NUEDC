@@ -252,6 +252,7 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.AC = check_sum2;
 	}
 	if(frame_num == 0xf4 || frame_num == 0xf5) ANO_DT_K210_Send_Data(send_buffer,_cnt);
+	else if(frame_num == 0xf5) ANO_DT_OpenMV_Send_Data(send_buffer,_cnt);
 	//ANO_DT_USER_Send_Data(send_buffer,_cnt);
 	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
@@ -290,7 +291,7 @@ void HMI_Frame_Send(u8 target)
 				break;
 			case 0x32:send_buffer[_cnt++] = fc_sta.fc_mode_sta + 0x30;
 				break;
-			case 0x33:send_buffer[_cnt++] = k210.number+0x30;
+			case 0x33:send_buffer[_cnt++] = k210.green+0x30;
 				break;
 			case 0x34:
 				for(int i=100;i>=1;i = i/10){
@@ -299,7 +300,7 @@ void HMI_Frame_Send(u8 target)
 				break;	
 			case 0x35:
 				for(int i=100;i>=1;i = i/10){
-					send_buffer[_cnt++] = hwt101.angel/i%10 + 0x30;
+					send_buffer[_cnt++] = k210.number + 0x30;
 				}
 				break;		
 			case 0x36:
@@ -399,6 +400,11 @@ static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length)
 static void ANO_DT_USER_Send_Data(u8 *dataToSend, u8 length)
 {
 	UartSendUser(dataToSend, length);
+}
+//向OpenMV(串口2)发送数据
+static void ANO_DT_OpenMV_Send_Data(u8 *dataToSend, u8 length)
+{
+	UartSendOpenMV(dataToSend, length);
 }
 //向K210(串口3)发送数据
 static void ANO_DT_K210_Send_Data(u8 *dataToSend, u8 length)

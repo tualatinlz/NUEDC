@@ -17,7 +17,7 @@ typedef struct
 	u8  yoffset;			 //左右偏移量
 	u8  ydirection; 	//y轴移动方向 右为0
   u8  update_cnt;  	//数据更新计数
-	u8  next;
+	u8  ready;
 	u8  land;
 } _openmv_st;
 

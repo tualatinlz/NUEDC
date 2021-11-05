@@ -47,11 +47,11 @@ if not os.path.exists('./Data/jpg'):
     os.mkdir('./Data/jpg')
 
 #createNoise()
-createRotate(0,5)
+createRotate(0,15)
 #createRotate(listStr,80,100)
 #createRotate(listStr,170,190)
 #createRotate(listStr,260,280)
-createRotate(355,359)
+createRotate(345,359)
 input()
 os.removedirs("./Data/change_Annotations")
 os.removedirs("./Data/change_JPEGImages")

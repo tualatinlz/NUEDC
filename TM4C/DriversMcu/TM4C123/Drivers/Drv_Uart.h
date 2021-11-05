@@ -2,9 +2,10 @@
 #define _DRV_UART_H_
 #include "sysconfig.h"
 
-#define UartSendUser	DrvUart1SendBuf
-#define UartSendK210	DrvUart3SendBuf
-#define UartSendLXIMU	DrvUart5SendBuf
+#define UartSendUser		DrvUart1SendBuf
+#define UartSendOpenMV	DrvUart2SendBuf
+#define UartSendK210		DrvUart3SendBuf
+#define UartSendLXIMU		DrvUart5SendBuf
 
 void DrvUart1Init(uint32_t baudrate);
 void DrvUart1SendBuf(u8 *data, u8 len);
