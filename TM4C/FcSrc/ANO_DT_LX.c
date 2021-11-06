@@ -300,6 +300,7 @@ void HMI_Frame_Send(u8 target)
 	send_buffer[_cnt++] = 0x74;
 	send_buffer[_cnt++] = 0x3D;
 	send_buffer[_cnt++] = 0x22;
+	
 	if(target1 == 0x30){
 		switch(target2){
 			case 0x30://电池电压
@@ -344,20 +345,17 @@ void HMI_Frame_Send(u8 target)
 	}
 	else if(target1 == 0x31){
 		switch(target2){
-			case 0x30:send_buffer[_cnt++] = k210.leftorright + 0x30;
+			case 0x30:send_buffer[_cnt++] = k210_cfg.mode+ 0x30;
 				break;
-			case 0x31:send_buffer[_cnt++] = k210.xdirection + 0x30;
+			case 0x31:send_buffer[_cnt++] = (k210.xdirection==0)?0x2B:0x2D;
 				break;
-			case 0x32:send_buffer[_cnt++] = k210.ydirection + 0x30;
+			case 0x32:send_buffer[_cnt++] = (k210.ydirection==0)?0x2B:0x2D;
 				break;
-			//case 0x33:send_buffer[_cnt++] = k210.distance + 0x30;
-				//break;
-			case 0x34:send_buffer[_cnt++] = k210_cfg.mode + 0x30;
+			case 0x33:send_buffer[_cnt++] = k210.next + 0x30;
+				break;
+			case 0x34:
 				break;	
-			case 0x35:
-				for(int i=100;i>=1;i = i/10){
-					send_buffer[_cnt++] = k210.angel/i%10 + 0x30;
-				}
+			case 0x35:send_buffer[_cnt++] = k210.number + 0x30;
 				break;		
 			case 0x36:
 				for(int i=100;i>=1;i = i/10){
@@ -369,10 +367,6 @@ void HMI_Frame_Send(u8 target)
 					send_buffer[_cnt++] = k210.yoffset/i%10 + 0x30;
 				}
 				break;	
-			case 0x38:send_buffer[_cnt++] = k210.number + 0x30;
-				break;	
-			case 0x39:
-				break;	
 			default:
 				break;
 		}
@@ -381,9 +375,9 @@ void HMI_Frame_Send(u8 target)
 		switch(target2){
 			case 0x30:send_buffer[_cnt++] = openmv.leftorright + 0x30;
 				break;
-			case 0x31:send_buffer[_cnt++] = openmv.xdirection + 0x30;
+			case 0x31:send_buffer[_cnt++] = (openmv.xdirection==0)?0x2B:0x2D;
 				break;
-			case 0x32:send_buffer[_cnt++] = openmv.ydirection + 0x30;
+			case 0x32:send_buffer[_cnt++] = (openmv.ydirection==0)?0x2B:0x2D;
 				break;
 			case 0x33:
 				send_buffer[_cnt++] = openmv.distance/10%10 + 0x30;
@@ -444,8 +438,8 @@ static void Check_To_Send(u8 frame_num)
 	{
 		dt.fun[frame_num].WTS = 0;
 		//向串口屏发送数据
-		if(frame_num == 0xf3) {
-			for(int i = hmi.page * 10;i < hmi.page * 10 + 10;i++){
+		if(frame_num == 0xf3 && hmi.page != 0) {
+			for(int i = (hmi.page-1) * 10;i < (hmi.page-1) * 10 + 10;i++){
 				HMI_Frame_Send(i);
 			}
 		}
