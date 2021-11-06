@@ -38,7 +38,7 @@ void UserTask_OneKeyCmd(void)
 			case 0x03:FC_Unlock();
 			hmi.mode = 0;
 				break;
-			case 0x04:spreadP(150);
+			case 0x04:spreadP(145);
 				break;
 			case 0x05:spreadPU(150);
 				break;
@@ -110,11 +110,11 @@ void spreadP(u8 height){
 		switch(direction){
 			case 90:
 			case 270:
-				blockLength = 50;
+				blockLength = 40;
 			break;
 			case 0:
 			case 180:
-				blockLength = 46;
+				blockLength = 40;
 			break;
 		
 		}
@@ -133,19 +133,19 @@ void spreadP(u8 height){
 				case 1:
 					targetHeight = height;
 					OneKey_Takeoff(height);
-					stage = 2;
-					delaycnt = 250;
-					delay_flag = 1;
-				break;
-				case 2:
-					Horizontal_Move(4*46,velocity,0);
 					stage = 3;
 					delaycnt = 250;
 					delay_flag = 1;
 				break;
+				case 2:
+					Horizontal_Move(4*43,velocity,0);
+					stage = 3;
+					delaycnt = 500;
+					delay_flag = 1;
+				break;
 				case 3:
-					Horizontal_Move(blockLength,velocity,90); 
-					delaycnt = 100;
+					Horizontal_Move(45,velocity,90); 
+					delaycnt = 200;
 					delay_flag = 1;
 					stage=4;
 				break;	
@@ -153,7 +153,7 @@ void spreadP(u8 height){
 				case 4:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 800;
+					delaycnt = 100;
 					delay_flag = 1;
 					stage=5;
 				break;
@@ -170,7 +170,7 @@ void spreadP(u8 height){
 					stage=7;
 				break;
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
-				case 8:
+				case 7:
 					if(sendflag==0){
 						k210_cfg.mode=1;
 						k210_cfg.go=1;
@@ -178,7 +178,7 @@ void spreadP(u8 height){
 						sendflag=1;
 					}
 					if(k210.next==1){
-						stage = 9;
+						stage = 8;
 						k210_cfg.go=0;
 						k210.next=0;
 						sendflag=0;
@@ -186,12 +186,12 @@ void spreadP(u8 height){
 					delaycnt = 25;
 					delay_flag = 1;
 				break;
-				case 9:
+				case 8:
 					Horizontal_Move(blockLength,velocity,direction);
 					step = step + 1;
-					delaycnt = 100;
+					delaycnt = blockLength * 50 / velocity;
 					delay_flag = 1;
-					stage=8;
+					stage=7;
 				break;
 				//惯导返航
 				case 10:
@@ -312,7 +312,7 @@ void spreadPU(u8 height){
 				case 1:
 					targetHeight = height;
 					OneKey_Takeoff(height);
-					stage = 2;
+					stage = 20;
 					delaycnt = 250;
 					delay_flag = 1;
 				break;
@@ -349,7 +349,7 @@ void spreadPU(u8 height){
 					stage=7;
 				break;
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
-				case 8:
+				case 7:
 					if(sendflag==0){
 						k210_cfg.mode=1;
 						k210_cfg.go=1;
@@ -357,7 +357,7 @@ void spreadPU(u8 height){
 						sendflag=1;
 					}
 					if(k210.next==1){
-						stage = 9;
+						stage = 8;
 						k210_cfg.go=0;
 						k210.next=0;
 						sendflag=0;
@@ -365,12 +365,12 @@ void spreadPU(u8 height){
 					delaycnt = 25;
 					delay_flag = 1;
 				break;
-				case 9:
+				case 8:
 					Horizontal_Move(blockLength,velocity,direction);
 					step = step + 1;
 					delaycnt = 100;
 					delay_flag = 1;
-					stage=8;
+					stage=7;
 				break;
 				//惯导返航 K210辅助定位
 				case 10:
@@ -421,7 +421,7 @@ void spreadPU(u8 height){
 					else{
 						Horizontal_Move(50,velocity,270);
 						openmv.xtotal += 50;
-						delaycnt = 300;
+						delaycnt = 200;
 						delay_flag = 1;
 					}
 				case 22:
