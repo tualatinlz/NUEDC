@@ -99,5 +99,9 @@ static void OpenMV_DataAnl(uint8_t *data, uint8_t len)
 		{
 			openmv.ready = *(data + 5);
 		}
+		else if (*(data + 4) == 4) //无人机到距离了
+		{
+			openmv.distance = *(data + 5);
+		}
 	}
 }

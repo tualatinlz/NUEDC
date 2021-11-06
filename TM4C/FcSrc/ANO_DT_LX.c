@@ -74,6 +74,14 @@ void ANO_DT_Init(void)
 	dt.fun[0xf5].D_Addr = 0xff;
 	dt.fun[0xf5].fre_ms = 0;	  //0 由外部触发
 	dt.fun[0xf5].time_cnt_ms = 0; //设置初始相位，单位1ms
+	
+	dt.fun[0xf6].D_Addr = 0xff;
+	dt.fun[0xf6].fre_ms = 0;	  //0 由外部触发
+	dt.fun[0xf6].time_cnt_ms = 0; //设置初始相位，单位1ms
+	
+	dt.fun[0xf7].D_Addr = 0xff;
+	dt.fun[0xf7].fre_ms = 0;	  //0 由外部触发
+	dt.fun[0xf7].time_cnt_ms = 0; //设置初始相位，单位1ms
 }
 
 //===================================================================
@@ -158,12 +166,12 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 	break;
 	case 0xf1: //K210参数传递
 	{
-			send_buffer[(*_cnt)++] = k210.number;
-			send_buffer[(*_cnt)++] = BYTE0(k210.angel);
-			send_buffer[(*_cnt)++] = BYTE1(k210.angel);
-			send_buffer[(*_cnt)++] = k210.leftorright;
-			send_buffer[(*_cnt)++] = k210.xoffset;
-			send_buffer[(*_cnt)++] = k210.yoffset;
+			//send_buffer[(*_cnt)++] = k210.number;
+			//send_buffer[(*_cnt)++] = BYTE0(k210.angel);
+			//send_buffer[(*_cnt)++] = BYTE1(k210.angel);
+			//send_buffer[(*_cnt)++] = k210.leftorright;
+			//send_buffer[(*_cnt)++] = k210.xoffset;
+			//send_buffer[(*_cnt)++] = k210.yoffset;
 	}
 	break;
 	case 0xf2: //OpenMV参数传递
@@ -194,6 +202,22 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[])
 		send_buffer[(*_cnt)++] = k210_cfg.b2;//B
 	}
 	break;
+	case 0xf6: //openmv模式指令
+	{
+		send_buffer[(*_cnt)++] = openmv_cfg.mode;//K210工作模式切换
+		//send_buffer[(*_cnt)++] = k210_cfg.go;
+	}
+	break;
+	case 0xf7: //K210参数指令
+	{
+		send_buffer[(*_cnt)++] = openmv_cfg.l1;//L
+		send_buffer[(*_cnt)++] = openmv_cfg.l2;//L
+		send_buffer[(*_cnt)++] = openmv_cfg.a1;//A
+		send_buffer[(*_cnt)++] = openmv_cfg.a2;//A
+		send_buffer[(*_cnt)++] = openmv_cfg.b1;//B
+		send_buffer[(*_cnt)++] = openmv_cfg.b2;//B
+	}
+	break;
 	default:
 		break;
 	}
@@ -218,6 +242,8 @@ void ANO_LX_Data_Exchange_Task(float dT_s)
 	Check_To_Send(0xf3);
 	Check_To_Send(0xf4);
 	Check_To_Send(0xf5);
+	Check_To_Send(0xf6);
+	Check_To_Send(0xf7);
 }
 
 //===================================================================
@@ -252,7 +278,7 @@ static void Frame_Send(u8 frame_num, _dt_frame_st *dt_frame)
 		dt.ck_back.AC = check_sum2;
 	}
 	if(frame_num == 0xf4 || frame_num == 0xf5) ANO_DT_K210_Send_Data(send_buffer,_cnt);
-	else if(frame_num == 0xf5) ANO_DT_OpenMV_Send_Data(send_buffer,_cnt);
+	else if(frame_num == 0xf6 || frame_num == 0xf7) ANO_DT_OpenMV_Send_Data(send_buffer,_cnt);
 	//ANO_DT_USER_Send_Data(send_buffer,_cnt);
 	else ANO_DT_LX_Send_Data(send_buffer, _cnt);
 }
@@ -274,16 +300,17 @@ void HMI_Frame_Send(u8 target)
 	send_buffer[_cnt++] = 0x74;
 	send_buffer[_cnt++] = 0x3D;
 	send_buffer[_cnt++] = 0x22;
+	
 	if(target1 == 0x30){
 		switch(target2){
-			case 0x30:
+			case 0x30://电池电压
 				send_buffer[_cnt++] = fc_bat.st_data.voltage_100/1000+0x30;
 				send_buffer[_cnt++] = fc_bat.st_data.voltage_100/100%10+0x30;
 				send_buffer[_cnt++] = 0x2E;
 				send_buffer[_cnt++] = fc_bat.st_data.voltage_100/10 % 10+0x30;
 				send_buffer[_cnt++] = fc_bat.st_data.voltage_100%10+0x30;
 				break;
-			case 0x31:
+			case 0x31://高度
 				if(ext_sens.gen_dis.st_data.distance_cm<100)	send_buffer[_cnt++] = 0x20;
 				else send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/100 + 0x30;
 				send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
@@ -291,14 +318,14 @@ void HMI_Frame_Send(u8 target)
 				break;
 			case 0x32:send_buffer[_cnt++] = fc_sta.fc_mode_sta + 0x30;
 				break;
-			case 0x33:send_buffer[_cnt++] = k210.green+0x30;
+			case 0x33:send_buffer[_cnt++] = k210.green+0x30; //识别到绿色
 				break;
-			case 0x34:
+			case 0x34://光流质量
 				for(int i=100;i>=1;i = i/10){
 						send_buffer[_cnt++] = ano_of.of_quality/i%10 + 0x30;
 				}
 				break;	
-			case 0x35:
+			case 0x35://条形码数字
 				for(int i=100;i>=1;i = i/10){
 					send_buffer[_cnt++] = k210.number + 0x30;
 				}
@@ -318,20 +345,17 @@ void HMI_Frame_Send(u8 target)
 	}
 	else if(target1 == 0x31){
 		switch(target2){
-			case 0x30:send_buffer[_cnt++] = k210.leftorright + 0x30;
+			case 0x30:send_buffer[_cnt++] = k210_cfg.mode+ 0x30;
 				break;
-			case 0x31:send_buffer[_cnt++] = k210.xdirection + 0x30;
+			case 0x31:send_buffer[_cnt++] = (k210.xdirection==0)?0x2B:0x2D;
 				break;
-			case 0x32:send_buffer[_cnt++] = k210.ydirection + 0x30;
+			case 0x32:send_buffer[_cnt++] = (k210.ydirection==0)?0x2B:0x2D;
 				break;
-			//case 0x33:send_buffer[_cnt++] = k210.distance + 0x30;
-				//break;
-			case 0x34:send_buffer[_cnt++] = k210_cfg.mode + 0x30;
+			case 0x33:send_buffer[_cnt++] = k210.next + 0x30;
+				break;
+			case 0x34:
 				break;	
-			case 0x35:
-				for(int i=100;i>=1;i = i/10){
-					send_buffer[_cnt++] = k210.angel/i%10 + 0x30;
-				}
+			case 0x35:send_buffer[_cnt++] = k210.number + 0x30;
 				break;		
 			case 0x36:
 				for(int i=100;i>=1;i = i/10){
@@ -343,7 +367,40 @@ void HMI_Frame_Send(u8 target)
 					send_buffer[_cnt++] = k210.yoffset/i%10 + 0x30;
 				}
 				break;	
-			case 0x38:send_buffer[_cnt++] = k210.number + 0x30;
+			default:
+				break;
+		}
+	}
+	else if(target1 == 0x32){
+		switch(target2){
+			case 0x30:send_buffer[_cnt++] = openmv.leftorright + 0x30;
+				break;
+			case 0x31:send_buffer[_cnt++] = (openmv.xdirection==0)?0x2B:0x2D;
+				break;
+			case 0x32:send_buffer[_cnt++] = (openmv.ydirection==0)?0x2B:0x2D;
+				break;
+			case 0x33:
+				send_buffer[_cnt++] = openmv.distance/10%10 + 0x30;
+				send_buffer[_cnt++] = openmv.distance%10 + 0x30;
+				break;
+			case 0x34:send_buffer[_cnt++] = openmv_cfg.mode + 0x30;
+				break;	
+			case 0x35:
+				for(int i=100;i>=1;i = i/10){
+					//send_buffer[_cnt++] = k210.angel/i%10 + 0x30;
+				}
+				break;		
+			case 0x36:
+				for(int i=100;i>=1;i = i/10){
+					send_buffer[_cnt++] = openmv.xoffset/i%10 + 0x30;
+				}
+				break;	
+			case 0x37:
+				for(int i=100;i>=1;i = i/10){
+					send_buffer[_cnt++] = openmv.yoffset/i%10 + 0x30;
+				}
+				break;	
+			case 0x38:send_buffer[_cnt++] = openmv.ready + 0x30;
 				break;	
 			case 0x39:
 				break;	
@@ -381,8 +438,8 @@ static void Check_To_Send(u8 frame_num)
 	{
 		dt.fun[frame_num].WTS = 0;
 		//向串口屏发送数据
-		if(frame_num == 0xf3) {
-			for(int i = hmi.page * 10;i < hmi.page * 10 + 10;i++){
+		if(frame_num == 0xf3 && hmi.page != 0) {
+			for(int i = (hmi.page-1) * 10;i < (hmi.page-1) * 10 + 10;i++){
 				HMI_Frame_Send(i);
 			}
 		}
