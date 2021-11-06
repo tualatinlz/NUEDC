@@ -10,7 +10,7 @@ sensor.set_vflip(True)
 #sensor.set_hmirror(True)
 #sensor.set_contrast(1)
 #sensor.set_gainceiling(16)
-sensor.set_auto_gain(False) # True开启；False关闭，使用颜色追踪时，需关闭
+sensor.set_auto_gain(True) # True开启；False关闭，使用颜色追踪时，需关闭
 sensor.set_auto_whitebal(False) # True开启；False关闭，使用颜色追踪时，需关闭
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA) # 80x60 (4,800 pixels) - O(N^2) max = 2,3040,000.
@@ -18,14 +18,15 @@ sensor.set_windowing((160, 120))
 sensor.skip_frames(time = 2000)     # WARNING: If you use QQVGA it may take seconds
 clock = time.clock()                # to process a frame sometimes.
 class ctrl(object):
-    work_mode = 0x01 #工作模式，可以通过串口设置成其他模式
+    work_mode = 0x00 #工作模式，可以通过串口设置成其他模式
 ctrl=ctrl()
 def change_mod():
     if(uart.any()):
         txt=uart.read()
-        if(txt[0]==0xAA):
-            if(txt[5]==0x01):
-                ctrl.work_mode=0x01
+        if(len(txt)>=6):
+            if(txt[0]==0xAA):
+                if(txt[1]==0xff):
+                    ctrl.work_mode=txt[4]
 
 uart = UART(3,115200)
 
@@ -38,6 +39,7 @@ class uart_ultrasonic_ini (object):
 
     def get_dis(self):
         #print(1)
+        self.dis=0
         a=[0x55]
         a=bytes(a)
         self.uart_B.write(a)
@@ -46,16 +48,15 @@ class uart_ultrasonic_ini (object):
             txt=self.uart_B.read()
             if(len(txt)>=2):
                 self.dis=txt[0]*256+txt[1]
-                print("chaosheng%d"%self.dis)
-                return int(self.dis/10)
+                return 0
 
 mode3=uart_ultrasonic_ini()
 class find_gan(object):
     def __init__(self):
-        self.GRAYSCALE_THRESHOLD = [(0, 12, -15, 5, -8, 23)]#灰度图
+        self.GRAYSCALE_THRESHOLD = [(0, 14, -15, 5, -8, 23)]#灰度图 16
         #GRAYSCALE_THRESHOLD =[(0, 45, -9, 24, -4, 17)]#寻杆阈值设置（彩色图）
         self.ROIS = [ # [ROI, weight]
-                (0, 100, 160, 20, 0.7), # 你需要为你的应用程序调整权重
+                (0, 100, 160, 20, 0.6), # 你需要为你的应用程序调整权重
                 (0, 050, 160, 20, 0.3), # 取决于你的机器人是如何设置的。
                 (0, 000, 160, 20, 0.1)
                ]
@@ -98,9 +99,10 @@ class find_gan(object):
     def find(self,img):
         centroid_sum = 0
         most_pixels = 0
+        blobs_cont=0
         #利用颜色识别分别寻找三个矩形区域内的线段
         for r in self.ROIS:
-            blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, roi=r[0:4], pixels_threshold=80, area_threshold=80, merge=True, margin=5)
+            blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, roi=r[0:4], pixels_threshold=40, area_threshold=40, merge=True, margin=5)
             # r[0:4] is roi tuple.
             #找到视野中的线,merge=true,将找到的图像区域合并成一个
 
@@ -121,42 +123,51 @@ class find_gan(object):
                 # 将此区域的像素数最大的颜色块画矩形和十字形标记出来
                 img.draw_cross(blobs[largest_blob].cx(),
                                blobs[largest_blob].cy())
-
+                blobs_cont+=1
                 centroid_sum += blobs[largest_blob].cx() * r[4] # r[4] is the roi weight.
                 #计算centroid_sum，centroid_sum等于每个区域的最大颜色块的中心点的x坐标值乘本区域的权值
+        #仅当三个位置都有时
+        if(blobs_cont==2 or blobs_cont==3):
+            center_pos = (centroid_sum / self.weight_sum) # Determine center of line.
+            #中间公式
+            if(center_pos==0):  #当少于
+                center_pos=80
+            # 将center_pos转换为一个偏角。我们用的是非线性运算，所以越偏离直线，响应越强。
+            #偏移厘米
+            deflection_length=(center_pos-56)*1
+            #deflection_angle = -math.atan((center_pos-80)/60)
+            #图像大小为QQVGA 160x120.
+            deflection_length=int(deflection_length)
+            print(deflection_length)
+            dis_n=0
+            if(deflection_length>20):
+                self.get_dis(2,10) #abs(deflection_length)
+            elif(deflection_length<-20):
+                self.get_dis(3,10) #abs(deflection_length)
+            else:
+                mode3.get_dis()
+                dis_n=mode3.dis/10
+            print("xianzai%d"%dis_n)
+            if(dis_n<200 and dis_n>70):     #2米向前走20cm
+                print("jin")
+                self.get_dis(0,20)
+            if(dis_n<=70 and dis_n>30):
+                True #开始识别
+                print("!!!!!!!")
+                a =[0xAA,0xFF,0xf1,0x02,0x03,0x01,0xA0,0xC8]
+                a=bytes(a)
+                uart.write(a)
+                ctrl.work_mode=0x00
+            #如果距离够近则转模式
+            time.sleep_ms(1000)  # 清
 
-        center_pos = (centroid_sum / self.weight_sum) # Determine center of line.
-        #中间公式
-
-        # 将center_pos转换为一个偏角。我们用的是非线性运算，所以越偏离直线，响应越强。
-        #偏移厘米
-        deflection_length=(center_pos-80)*1
-        #deflection_angle = -math.atan((center_pos-80)/60)
-        #图像大小为QQVGA 160x120.
-        deflection_length=int(deflection_length)
-        print(deflection_length)
-        if(deflection_length>10):
-            self.get_dis(3,abs(deflection_length))
-        elif(deflection_length<-10):
-            self.get_dis(2,abs(deflection_length))
-        elif(True):
-            dis_n=mode3.get_dis()
-        elif(dis_n<200 and dis_n>50):#2米向前走
-            print("jin")
-            self.get_dis(0,20)
-        else:
-            True #开始识别
-
-
-        #如果距离够近则转模式
-        #time.sleep_ms(2000)
-        #将结果打印在terminal中
+            #将结果打印在terminal中
 
 mode2=find_gan()
 while(True):
     clock.tick()
     img = sensor.snapshot()#.binary([THRESHOLD])
-    #img.lens_corr(1.0)
+    #img.lens_corr(1.2)
     change_mod()
     if (ctrl.work_mode==0x00):#MODE1 待机
         True
