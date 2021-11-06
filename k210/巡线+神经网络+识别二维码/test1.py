@@ -105,6 +105,7 @@ while(True):
             a = lcd.display(img,oft=(0,0))
         for i in code:
             lcd.draw_string(i.x()+45, i.y()-5, labels[i.classid()]+" "+'%.2f'%i.value(), lcd.WHITE,lcd.GREEN)
+            
         #[{"x":117, "y":39, "w":108, "h":155, "value":0.924899, "classid":0, "index":0, "objnum":1}]
         #print(code[0].classid())
     else:
