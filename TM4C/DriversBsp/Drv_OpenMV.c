@@ -101,7 +101,8 @@ static void OpenMV_DataAnl(uint8_t *data, uint8_t len)
 		}
 		else if (*(data + 4) == 4) //无人机到距离了
 		{
-			openmv.distance = *(data + 5);
+			openmv.xdistance = *(data + 5);
+			openmv.ydistance = *(data+6);
 		}
 	}
 }
