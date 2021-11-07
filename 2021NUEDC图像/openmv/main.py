@@ -30,35 +30,15 @@ def change_mod():
 
 uart = UART(3,115200)
 
-class uart_ultrasonic_ini (object):
-
-    def __init__(self):
-        self.dis=0
-        self.nownn=0
-        self.uart_B= UART(1,9600)
-
-    def get_dis(self):
-        #print(1)
-        self.dis=0
-        a=[0x55]
-        a=bytes(a)
-        self.uart_B.write(a)
-        time.sleep_ms(500)
-        if(self.uart_B.any()):
-            txt=self.uart_B.read()
-            if(len(txt)>=2):
-                self.dis=txt[0]*256+txt[1]
-                return 0
-
-mode3=uart_ultrasonic_ini()
+uart_b= UART(1,115200)
 class find_gan(object):
     def __init__(self):
-        self.GRAYSCALE_THRESHOLD = [(0, 14, -15, 5, -8, 23)]#灰度图 16
+        self.GRAYSCALE_THRESHOLD = [(0, 28, -30, 12, -21, 19)]#灰度图 16
         #GRAYSCALE_THRESHOLD =[(0, 45, -9, 24, -4, 17)]#寻杆阈值设置（彩色图）
         self.ROIS = [ # [ROI, weight]
-                (0, 100, 160, 20, 0.6), # 你需要为你的应用程序调整权重
-                (0, 050, 160, 20, 0.3), # 取决于你的机器人是如何设置的。
-                (0, 000, 160, 20, 0.1)
+                (0, 100, 160, 20, 0.6, 0.0), # 你需要为你的应用程序调整权重
+                (0, 050, 160, 20, 0.3, 0.4), # 取决于你的机器人是如何设置的。
+                (0, 000, 160, 20, 0.1, 0.6)
                ]
         # Compute the weight divisor (we're computing this so you don't have to make weights add to 1).
         self.weight_sum = 0 #权值和初始化
@@ -100,9 +80,10 @@ class find_gan(object):
         centroid_sum = 0
         most_pixels = 0
         blobs_cont=0
+        wide_now=0
         #利用颜色识别分别寻找三个矩形区域内的线段
         for r in self.ROIS:
-            blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, roi=r[0:4], pixels_threshold=40, area_threshold=40, merge=True, margin=5)
+            blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, roi=r[0:4], pixels_threshold=20, area_threshold=10, merge=True, margin=5)
             # r[0:4] is roi tuple.
             #找到视野中的线,merge=true,将找到的图像区域合并成一个
 
@@ -125,11 +106,13 @@ class find_gan(object):
                                blobs[largest_blob].cy())
                 blobs_cont+=1
                 centroid_sum += blobs[largest_blob].cx() * r[4] # r[4] is the roi weight.
+                wide_now += blobs[largest_blob].w() * r[5]
                 #计算centroid_sum，centroid_sum等于每个区域的最大颜色块的中心点的x坐标值乘本区域的权值
         #仅当三个位置都有时
         if(blobs_cont==2 or blobs_cont==3):
             center_pos = (centroid_sum / self.weight_sum) # Determine center of line.
             #中间公式
+            wide_c= (wide_now/ self.weight_sum)
             if(center_pos==0):  #当少于
                 center_pos=80
             # 将center_pos转换为一个偏角。我们用的是非线性运算，所以越偏离直线，响应越强。
@@ -144,20 +127,21 @@ class find_gan(object):
                 self.get_dis(2,10) #abs(deflection_length)
             elif(deflection_length<-20):
                 self.get_dis(3,10) #abs(deflection_length)
-            else:
-                mode3.get_dis()
-                dis_n=mode3.dis/10
-            print("xianzai%d"%dis_n)
-            if(dis_n<200 and dis_n>70):     #2米向前走20cm
+            #else:
+            #    mode3.get_dis()
+            #    dis_n=mode3.dis/10
+
+            elif(wide_c<18 and wide_c>1):     #2米向前走20cm
                 print("jin")
                 self.get_dis(0,20)
-            if(dis_n<=70 and dis_n>30):
+            elif(wide_c>18 ):
                 True #开始识别
                 print("!!!!!!!")
                 a =[0xAA,0xFF,0xf1,0x02,0x03,0x01,0xA0,0xC8]
                 a=bytes(a)
                 uart.write(a)
                 ctrl.work_mode=0x00
+            print("xianzai%d"%wide_c)
             #如果距离够近则转模式
             time.sleep_ms(1000)  # 清
 
@@ -171,7 +155,16 @@ while(True):
     change_mod()
     if (ctrl.work_mode==0x00):#MODE1 待机
         True
-    if (ctrl.work_mode==0x01):#MODE2 开始找杆
+    if (ctrl.work_mode==0x01):#MODE1 开始找杆
         mode2.find(img)
-
+    if (ctrl.work_mode==0x02):#MODE2 传参
+        a =[0xAA,0xFF,0xf1,0x01,0x01,0x01,0xA0,0xC8]
+        a=bytes(a)
+        uart_b.write(a)
+        time.sleep_ms(100)
+        if(uart_b.any()):
+            txt=uart_b.read()
+            txt=bytes(txt)
+            uart.write(txt)
+            ctrl.work_mode=0x00
 
