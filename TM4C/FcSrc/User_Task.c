@@ -35,8 +35,8 @@ void UserTask_OneKeyCmd(void)
 			case 0x02:OneKey_Land();
 			hmi.mode = 0;
 				break;
-			case 0x03:customF();
-			//hmi.mode = 0;
+			case 0x03:FC_Unlock();
+			hmi.mode = 0;
 				break;
 			case 0x04:spreadP(150);
 				break;
@@ -59,18 +59,16 @@ void UserTask_OneKeyCmd(void)
 		}
 }
 void spreadP(u8 height){
-		static u16 counter = 0;		//飞行时间计数
+		static u16 counter = 0;			//飞行时间计数
 		counter ++;
-		u16 maxcnt = 18000;				//最大飞行时间
-		static u8 stage = 0;			//流程执行阶段
-		static u8 sendflag=0;			//发送标志位
-		static u8 step = 1;				//格子走到第几步了
-		static u8 counterLED = 0;	//LED闪烁次数
-		u8 blockLength = 50;			//格子长度
+		u16 maxcnt = 18000;					//最大飞行时间
+		static u8 stage = 0;				//流程执行阶段
+		static u8 sendflag=0;				//发送标志位
+		static u8 step = 1;					//格子走到第几步了
+		static u8 counterLED = 0;		//LED闪烁次数
+		u8 blockLength = 50;				//格子长度
 		u8 velocity = 50;						//前进速度
 		static u16 direction = 90;	//前进方向 
-		//u8 vd = 45;	 							//转向角速度
-		//u8 degcnt = 110;					//转向等待时间
 		LX_Change_Mode(3);					//切换到程控模式
 		
 		if(hmi.mode != hmi.oldmode){
@@ -86,29 +84,21 @@ void spreadP(u8 height){
 				break;
 			case 8:direction = 90;
 				break;
-			case 11:direction = 0;
+			case 9:direction = 0;
 				break;
-			case 12:direction = 270;
+			case 13:direction = 90;
 				break;
-			case 14:direction = 0;
+			case 14:direction = 180;
 				break;
-			case 15:direction = 90;
+			case 18:direction = 90;
 				break;
-			case 17:direction = 0;
-				break;
-			case 18:direction = 270;
-				break;
-			case 20:direction = 0;
-				break;
-			case 21:direction = 90;
-				break;
-			case 23:direction = 0;
+			case 19:direction = 0;
 				break;
 			case 24:direction = 270;
 				break;
-			case 30:Right_Rotate(180,90);
+			case 30:Horizontal_Move(50,velocity,180);
 							step++;
-							delaycnt=300;
+							delaycnt=70;
 							delay_flag=1;
 							stage = 10;
 				break;
@@ -157,34 +147,27 @@ void spreadP(u8 height){
 					Horizontal_Move(blockLength,velocity,90); 
 					delaycnt = 100;
 					delay_flag = 1;
-					stage=5;
+					stage=4;
 				break;	
-				//经验调整
-				//case 4:
-				//	Horizontal_Move(blockLength,velocity,0); 
-				//	delaycnt = 70;
-				//	delay_flag = 1;
-				//	stage=5;
-				//break;
 				//K210开启字母识别，根据A位置调整
-				case 5:
+				case 4:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
+					delaycnt = 800;
+					delay_flag = 1;
+					stage=5;
+				break;
+				case 5:
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
 					delaycnt = 70;
 					delay_flag = 1;
 					stage=6;
 				break;
 				case 6:
-					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
-					delaycnt = 70;
-					delay_flag = 1;
-					stage=7;
-				break;
-				case 7:
 					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
 					delaycnt = 70;
 					delay_flag = 1;
-					stage=8;
+					stage=7;
 				break;
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
 				case 8:
@@ -212,14 +195,14 @@ void spreadP(u8 height){
 				break;
 				//惯导返航
 				case 10:
-					Horizontal_Move(5*blockLength,velocity,180);
+					Horizontal_Move(4*blockLength,velocity,180);
 					delaycnt = 300;
 					delay_flag = 1;
 					stage=11;
 				break;
 				case 11:
 					Horizontal_Move(blockLength,velocity,270);
-					k210_cfg.mode=3;	
+					k210_cfg.mode=3;
 					dt.fun[0xf4].WTS=1;
 					delaycnt = 50;
 					delay_flag = 1;
@@ -255,84 +238,65 @@ void spreadP(u8 height){
 }
 
 void spreadPU(u8 height){
-		static u16 counter = 0;		//飞行时间计数
+		static u16 counter = 0;			//飞行时间计数
 		counter ++;
-		u16 maxcnt = 18000;				//最大飞行时间
-		static u8 stage = 0;			//流程执行阶段
-		static u8 sendflag=0;			//发送标志位
-		static u8 step = 1;				//格子走到第几步了
-		static u8 counterLED = 0;	//LED闪烁次数
-		u8 blockLength = 50;			//格子长度
-		u8 velocity = 50;					//前进速度
-		u8 vd = 90;	 							//转向角速度
-		LX_Change_Mode(3);				//切换到程控模式
+		u16 maxcnt = 18000;					//最大飞行时间
+		static u8 stage = 0;				//流程执行阶段
+		static u8 sendflag=0;				//发送标志位
+		static u8 step = 1;					//格子走到第几步了
+		static u8 counterLED = 0;		//LED闪烁次数
+		u8 blockLength = 50;				//格子长度
+		u8 velocity = 50;						//前进速度
+		static u16 direction = 90;	//前进方向 
+		LX_Change_Mode(3);					//切换到程控模式
 		
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
 			sendflag = 0;
-			step = 0;
+			step = 1;
 			counterLED = 0;
 			hmi.oldmode = hmi.mode;
 		}
 		switch(step){
-			case 4:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 4:direction = 180;
 				break;
-			case 8:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 8:direction = 90;
 				break;
-			case 11:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 9:direction = 0;
 				break;
-			case 12:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 13:direction = 90;
 				break;
-			case 14:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 14:direction = 180;
 				break;
-			case 15:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 18:direction = 90;
 				break;
-			case 17:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 19:direction = 0;
 				break;
-			case 18:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
+			case 24:direction = 270;
 				break;
-			case 20:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 21:Right_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 23:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 24:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-				break;
-			case 30:Left_Rotate(90,vd);
-					delaycnt=50;
-					delay_flag=1;
-					stage = 6;
+			case 30:Horizontal_Move(50,velocity,180);
+							step++;
+							delaycnt=70;
+							delay_flag=1;
+							stage = 20;
 				break;
 				default:
 					break;
 		}
 		
+		//根据平移方向确定距离
+		switch(direction){
+			case 90:
+			case 270:
+				blockLength = 50;
+			break;
+			case 0:
+			case 180:
+				blockLength = 46;
+			break;
+		
+		}
 		if(delay_flag){
 			delay20();
 		}
@@ -340,7 +304,7 @@ void spreadPU(u8 height){
 			switch(stage){
 				case 0:
 					FC_Unlock();
-					//k210.number = 4;
+					k210.number = 4;
 					stage = 1;
 					delaycnt = 200;
 					delay_flag = 1;
@@ -348,49 +312,41 @@ void spreadPU(u8 height){
 				case 1:
 					targetHeight = height;
 					OneKey_Takeoff(height);
-					stage = 20;
+					stage = 2;
 					delaycnt = 250;
 					delay_flag = 1;
 				break;
 				case 2:
-					Horizontal_Move(4*blockLength,velocity,0);
+					Horizontal_Move(4*46,velocity,0);
 					stage = 3;
 					delaycnt = 250;
 					delay_flag = 1;
 				break;
 				case 3:
-					Right_Rotate(90,90);
-					step++;
-					delaycnt = 70;
+					Horizontal_Move(blockLength,velocity,90); 
+					delaycnt = 100;
 					delay_flag = 1;
 					stage=4;
 				break;	
-				//经验调整
+				//K210开启字母识别，根据A位置调整
 				case 4:
-					Horizontal_Move(blockLength,velocity,0); 
-					delaycnt = 50;
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 800;
 					delay_flag = 1;
 					stage=5;
 				break;
-				//K210开启字母识别，根据A位置调整
 				case 5:
-					k210_cfg.mode=2;	
-					dt.fun[0xf4].WTS=1; 
-					delaycnt = 50;
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+					delaycnt = 70;
 					delay_flag = 1;
 					stage=6;
 				break;
 				case 6:
-					Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
 					delaycnt = 70;
 					delay_flag = 1;
 					stage=7;
-				break;
-				case 7:
-					Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
-					delaycnt = 70;
-					delay_flag = 1;
-					stage=8;
 				break;
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
 				case 8:
@@ -401,36 +357,35 @@ void spreadPU(u8 height){
 						sendflag=1;
 					}
 					if(k210.next==1){
-						stage = 5;
+						stage = 9;
 						k210_cfg.go=0;
 						k210.next=0;
 						sendflag=0;
 					}
-					stage = 9;
 					delaycnt = 25;
 					delay_flag = 1;
 				break;
 				case 9:
-					Horizontal_Move(blockLength,velocity,0);
-					step++;
-					delaycnt = 50;
+					Horizontal_Move(blockLength,velocity,direction);
+					step = step + 1;
+					delaycnt = 100;
 					delay_flag = 1;
 					stage=8;
 				break;
-				//惯导返航
+				//惯导返航 K210辅助定位
 				case 10:
-					Horizontal_Move(5*blockLength,velocity,0);
-					delaycnt = 50;
+					Horizontal_Move(openmv.xtotal+50,50,90);
+					delaycnt = 200;
 					delay_flag = 1;
-					stage=11;
+					stage = 11;
 				break;
 				case 11:
-					Horizontal_Move(blockLength,velocity,90);
-					k210_cfg.mode=3;	
+					Horizontal_Move(200-openmv.ytotal,50,0);
+					k210_cfg.mode=3;
 					dt.fun[0xf4].WTS=1;
-					delaycnt = 50;
+					delaycnt = 200;
 					delay_flag = 1;
-					stage=12;
+					stage = 12;
 				break;
 				//根据十字位置判断飞机位置，K210控制飞机调整降落点
 				case 12:
@@ -525,56 +480,33 @@ void spreadPU(u8 height){
 							counterLED = 0;
 						}
 					break;
-					case 28:
-						blink();
-						delaycnt = 30;
-						delay_flag = 1;
-						counterLED++;
-						//2*数字
-						if(counterLED >= 2*k210.number){
-							delaycnt = 150;
-							delay_flag = 1;
-							stage = 29;
-							counterLED = 0;
-						}
-					break;
-					case 29:	
-						targetHeight = 150;
-						Vertical_Target(150);
-						delaycnt = 100;
-						delay_flag = 1;
-						stage = 30;
-						break;
-					//回到十字
-					case 30:
-						Horizontal_Move(openmv.xtotal+50,50,90);
-						delaycnt = 200;
-						delay_flag = 1;
-						stage = 31;
-					break;
-					case 31:
-						Horizontal_Move(200-openmv.ytotal,50,0);
-						k210_cfg.mode=3;
-						dt.fun[0xf4].WTS=1;
-						delaycnt = 200;
-						delay_flag = 1;
-						stage = 32;
-					break;
-					//十字直接降落，待完善
-					case 32:
-						OneKey_Land();
-					break;
-				case 41:
-					Vertical_Down(20,20);
-					stage= 12;
-					delaycnt = 50;
+				case 28:
+					blink();
+					delaycnt = 30;
 					delay_flag = 1;
+					counterLED++;
+					//2*数字
+					if(counterLED >= 2*k210.number){
+						delaycnt = 150;
+						delay_flag = 1;
+						stage = 29;
+						counterLED = 0;
+					}
 				break;
+					//返回初始高度
+				case 29:	
+					targetHeight = 150;
+					Vertical_Target(150);
+					delaycnt = 100;
+					delay_flag = 1;
+					stage = 30;
+				break;
+					//返航并降落至指定位置
+				
+				//十字直接降落，待完善
 				//LED依据识别到的数字闪烁
 				case 60:
 					OneKey_Land();
-				break;
-				//2*数字
 				break;
 				}
 		//超时降落			

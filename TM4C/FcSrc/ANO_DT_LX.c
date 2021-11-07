@@ -373,17 +373,21 @@ void HMI_Frame_Send(u8 target)
 	}
 	else if(target1 == 0x32){
 		switch(target2){
-			case 0x30:send_buffer[_cnt++] = openmv.leftorright + 0x30;
+			case 0x30:send_buffer[_cnt++] = openmv_cfg.mode + 0x30;
 				break;
 			case 0x31:send_buffer[_cnt++] = (openmv.xdirection==0)?0x2B:0x2D;
 				break;
 			case 0x32:send_buffer[_cnt++] = (openmv.ydirection==0)?0x2B:0x2D;
 				break;
 			case 0x33:
-				send_buffer[_cnt++] = openmv.distance/10%10 + 0x30;
-				send_buffer[_cnt++] = openmv.distance%10 + 0x30;
+				send_buffer[_cnt++] = openmv.xtotal/100%10 + 0x30;
+				send_buffer[_cnt++] = openmv.xtotal/10%10 + 0x30;
+				send_buffer[_cnt++] = openmv.xtotal%10 + 0x30;
 				break;
-			case 0x34:send_buffer[_cnt++] = openmv_cfg.mode + 0x30;
+			case 0x34:
+				send_buffer[_cnt++] = openmv.ytotal/100%10 + 0x30;
+				send_buffer[_cnt++] = openmv.ytotal/10%10 + 0x30;
+				send_buffer[_cnt++] = openmv.ytotal%10 + 0x30;
 				break;	
 			case 0x35:
 				for(int i=100;i>=1;i = i/10){

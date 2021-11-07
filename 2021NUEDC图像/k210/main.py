@@ -340,7 +340,6 @@ while(True):
         object3.runn(img)
     if (ctrl.work_mode==0x03):#MODE4 #寻找十字的坐标
         object4.find_dot(img)
-
     if (ctrl.work_mode==0x00):#MODE5 #空
         True
     change_mod()#模式改变
