@@ -40,7 +40,7 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x04:spreadP(145);
 				break;
-			case 0x05:spreadPU(150);
+			case 0x05:spreadPU(145);
 				break;
 			case 0x06:customF();
 				break;
@@ -115,9 +115,9 @@ void spreadP(u8 height){
 			case 27:step ++;
 						  stage = 70;
 				break;
-			case 29:direction = 270;
+			case 28:direction = 270;
 				break;
-			case 37:Horizontal_Move(blockLength,velocity,180);
+			case 36:Horizontal_Move(blockLength,velocity,180);
 							step++;
 							delaycnt=70;
 							delay_flag=1;
@@ -294,15 +294,13 @@ void spreadP(u8 height){
 					delaycnt = 50;
 					delay_flag = 1;
 					stage=16;
-					if(k210.land == 1)stage=60;
 				break;
 				case 16:
 					Horizontal_Move(k210.yoffset,50,k210.ydirection*180);
 					k210.yoffset = 0;
 					delaycnt = 50;
 					delay_flag = 1;
-					stage=15;
-					if(k210.land == 1)stage=60;
+					stage=60;
 				break;
 				case 60:
 					OneKey_Land();
@@ -408,7 +406,11 @@ void spreadPU(u8 height){
 						  stage = 70;
 							xlilun = 12;
 				break;
-			case 27:step ++;
+			case 24:step ++;
+						  stage = 72;
+							ylilun = 70;
+				break;
+			case 28:step ++;
 						  stage = 70;
 				break;
 			case 29:direction = 270;
@@ -590,17 +592,18 @@ void spreadPU(u8 height){
 					delaycnt = 50;
 					delay_flag = 1;
 					stage=16;
-					if(k210.land == 1)stage=60;
 				break;
 				case 16:
 					Horizontal_Move(k210.yoffset,50,k210.ydirection*180);
 					k210.yoffset = 0;
 					delaycnt = 50;
 					delay_flag = 1;
-					stage=15;
-					if(k210.land == 1)stage=60;
+					stage=60;
 				break;
 				case 60:
+					Horizontal_Move(k210.number*8,velocity,180);
+				break;
+				case 61:
 					OneKey_Land();
 				break;
 				//寻找杆子和二维码位置
@@ -712,8 +715,8 @@ void spreadPU(u8 height){
 				break;
 					//返回初始高度
 				case 29:	
-					targetHeight = 150;
-					Vertical_Target(150);
+					targetHeight = 145;
+					Vertical_Target(145);
 					delaycnt = 100;
 					delay_flag = 1;
 					stage = 30;
