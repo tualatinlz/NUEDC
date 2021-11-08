@@ -99,10 +99,12 @@ static void OpenMV_DataAnl(uint8_t *data, uint8_t len)
 		{
 			openmv.ready = *(data + 5);
 		}
-		else if (*(data + 4) == 4) //无人机到距离了
+		else if (*(data + 4) == 4) //全场定位
 		{
 			openmv.xdistance = *(data + 5);
-			openmv.ydistance = *(data+6);
+			openmv.ydistance = *(data + 6);
+			openmv.xdistancel = *(data + 7);
+			openmv.ydistanceu = *(data + 8);
 		}
 	}
 }

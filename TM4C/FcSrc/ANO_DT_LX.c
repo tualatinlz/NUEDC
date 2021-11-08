@@ -396,16 +396,16 @@ void HMI_Frame_Send(u8 target)
 				break;		
 			case 0x36:
 				for(int i=100;i>=1;i = i/10){
-					send_buffer[_cnt++] = openmv.xoffset/i%10 + 0x30;
+					send_buffer[_cnt++] = openmv.xdistancel/i%10 + 0x30;
 				}
 				break;	
 			case 0x37:
 				for(int i=100;i>=1;i = i/10){
-					send_buffer[_cnt++] = openmv.yoffset/i%10 + 0x30;
+					send_buffer[_cnt++] = openmv.ydistance/i%10 + 0x30;
 				}
 				break;	
 			case 0x38:for(int i=100;i>=1;i = i/10){
-					send_buffer[_cnt++] = openmv.ydistance/i%10 + 0x30;
+					send_buffer[_cnt++] = openmv.ydistanceu/i%10 + 0x30;
 				}
 				break;	
 			case 0x39:
