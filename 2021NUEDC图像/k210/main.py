@@ -181,7 +181,7 @@ class dot_green(object):
         #thresholds为黑色物体颜色的阈值，是一个元组，需要用括号［ ］括起来可以根据不同的颜色阈值更改；pixels_threshold 像素个数阈值，
         #如果色块像素数量小于这个值，会被过滤掉area_threshold 面积阈值，如果色块被框起来的面积小于这个值，会被过滤掉；merge 合并，如果
         #设置为True，那么合并所有重叠的blob为一个；margin 边界，如果设置为5，那么两个blobs如果间距5一个像素点，也会被合并。
-        for blob in img.find_blobs([self.THRESHOLD],roi=(142,124,70,70), pixels_threshold=500, area_threshold=80, merge=True, margin=5):
+        for blob in img.find_blobs([self.THRESHOLD],roi=(142,124,75,75), pixels_threshold=500, area_threshold=80, merge=True, margin=5):
             if blob.pixels()>=100:#寻找最大的黑点
                 ##先对图像进行分割，二值化，将在阈值内的区域变为白色，阈值外区域变为黑色
                 #img.binary([self.THRESHOLD])
@@ -224,7 +224,7 @@ class dot(object):
         self.ok=0
         self.x=0
         self.y=0
-        self.THRESHOLD = (0, 55, -13, 9, -22, 20)
+        self.THRESHOLD = (0, 41, -24, 8, -12, 21)
     def get_dis(self,wei,dat):
         a =[0xAA,0xFF,0xf1,0x04,0x00,0x00,0x00,0x00,0x00,0x00]
         if(wei==0):
@@ -277,10 +277,10 @@ class dot(object):
                 print("centre_x = %d, centre_y = %d"%(self.x, self.y))
         #判断标志位 赋值像素点数据
         if(self.ok==1):
-            num_x=(143-self.x)*0.476
-            num_y=(122-self.y)*0.476
+            num_x=(170-self.x)*0.476
+            num_y=(154-self.y)*0.476
             #self.send_num()
-            if(abs(num_x)<=10 and abs(num_y)<=10):
+            if(abs(num_x)<=18 and abs(num_y)<=18):
                 a =[0XAA,0XFF,0XF1,0X02,0X06,0X01,0XA3,0XCE]
                 a=bytes(a)
                 uart_A.write(a)
@@ -323,9 +323,10 @@ def change_mod():
                         a =[0x57,0x00,0x18,0x00,0x55,0x00]
                         a=bytes(a)
                         uart_B.write(a)
-                if(txt[5]==0x01):
-                    object1.flag=0
-                    object1.nownn=time.ticks_ms()
+                    if(txt[4]==0x01):
+                        if(txt[5]==0x01):
+                            object1.flag=0
+                            object1.nownn=time.ticks_ms()
 
 
 #主程序
@@ -340,6 +341,22 @@ while(True):
         object3.runn(img)
     if (ctrl.work_mode==0x03):#MODE4 #寻找十字的坐标
         object4.find_dot(img)
+    if (ctrl.work_mode==0x05):#MODE5 #切模式闪烁
+        laser_out.value(0)
+        utime.sleep_ms(750) # 记得清
+        laser_out.value(1)
+        utime.sleep_ms(750)
+        a =[0xAA,0xFF,0xf1,0x02,0x05,0x01,0x00,0x00]   #喷洒完成发送
+        sum_check=0
+        add_check=0
+        for i in range(0,a[3]+4):
+            sum_check += a[i]
+            add_check += sum_check
+        a[a[3]+4] = sum_check%256
+        a[a[3]+5] = add_check%256
+        a=bytes(a)
+        uart_A.write(a)
+        ctrl.work_mode=0x00
     if (ctrl.work_mode==0x00):#MODE5 #空
         True
     change_mod()#模式改变
