@@ -93,8 +93,8 @@ class kkpu(object):
                 num_x=i.x()+i.w()/2
                 num_y=i.y()+i.h()/2
                     #int(labels[int(code[0].classid())])
-                num_x=(170-num_x)*0.476
-                num_y=(166-num_y)*0.476
+                num_x=(144-num_x)*0.476
+                num_y=(140-num_y)*0.476
             if(int(num_x)>0):
                 self.get_dis(1,int(num_x))
             else:

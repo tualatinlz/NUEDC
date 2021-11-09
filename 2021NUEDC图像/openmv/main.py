@@ -134,7 +134,7 @@ class find_gan(object):
 
             elif(wide_c<17 and wide_c>=1):     #2米向前走20cm
                 print("jin")
-                self.get_dis(0,20)
+                self.get_dis(0,10)
             elif(wide_c>=17):
                 True #开始识别
                 print("!!!!!!!")
@@ -169,5 +169,17 @@ while(True):
             txt=bytes(txt)
             uart.write(txt)
             ctrl.work_mode=0x00
-            led.on()
+            led.off()
+    if (ctrl.work_mode==0x03):#MODE3 传参竖着
+        a =[0xAA,0xFF,0xf1,0x02,0x02,0x02,0xA0,0xC8]
+        a=bytes(a)
+        uart_b.write(a)
+        led.on()
+        time.sleep_ms(100)
+        if(uart_b.any()):
+            txt=uart_b.read()
+            txt=bytes(txt)
+            uart.write(txt)
+            ctrl.work_mode=0x00
+            led.off()
 
