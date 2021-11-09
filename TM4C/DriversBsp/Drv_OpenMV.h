@@ -20,8 +20,10 @@ typedef struct
 	u8  ydirection; 	//y轴移动方向 右为0
   u8  update_cnt;  	//数据更新计数
 	u8  ready;				//到杆子指定位置了
-	int  xdistance;			//右边界距离
-	int  ydistance;			//上边界距离
+	u8  xdistance;			//右边界距离
+	u8  ydistance;			//下边界距离
+	u8  xdistancel;			//左边界距离
+	u8  ydistanceu;			//上边界距离
 } _openmv_st;
 
 typedef struct

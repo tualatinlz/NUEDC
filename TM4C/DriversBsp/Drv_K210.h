@@ -32,6 +32,7 @@ typedef struct
 	u8 	a2;
 	u8 	b1;
 	u8 	b2;
+	u8  map;
 } _k210_config;
 //״̬
 
