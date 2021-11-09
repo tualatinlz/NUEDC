@@ -12,7 +12,7 @@ static u8 delay_flag;
 extern int targetHeight;
 //第一个双0 下标记25
 u8 map[4][44] ={{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-								{1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,0,1,1,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+								{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 								{1,1,1,1,1,0,0,0,1,1,1,1,0,0,0,1,1,1,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 								{1,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}};
 
@@ -111,7 +111,7 @@ void spreadP(u8 height){
 						  stage = 70;
 				break;
 			case 22:
-							Horizontal_Move(40,40,90);
+							Horizontal_Move(30,30,90);
 							delaycnt = 60;
 							delay_flag = 1;
 							step++;
@@ -455,30 +455,30 @@ void spreadPU(u8 height){
 			case 15:direction = 90;
 				break;
 			case 16:direction = 180;
-							step ++;
-						  stage = 70;
+							//step ++;
+						  //stage = 70;
 				break;
-			case 22:
-							Horizontal_Move(40,40,90);
+			case 21:
+							Horizontal_Move(33,33,90);
 							delaycnt = 60;
 							delay_flag = 1;
 							step++;
 				break;
-			case 23:direction = 0;
+			case 22:direction = 0;
 				break;
-			case 25:step ++;
+			case 24:step ++;
 							xlilun = 57;
 						  stage = 70;			
 				break;
-			case 27:stage = 72;
+			case 26:stage = 72;
 							ylilun = 32;
 							step ++;
 				break;
-			case 31:direction = 270;
-							step ++;
-							stage = 76;
+			case 29:direction = 270;
+							//step ++;
+							//stage = 76;
 				break;
-			case 39:Horizontal_Move(blockLength,velocity,180);
+			case 37:Horizontal_Move(blockLength,velocity,180);
 							step++;
 							delaycnt=70;
 							delay_flag=1;
@@ -495,8 +495,8 @@ void spreadPU(u8 height){
 				velocity = 46;
 			break;
 			case 270:
-				blockLength = 52;
-				velocity = 52;
+				blockLength = 53;
+				velocity = 53;
 			break;
 			case 0:
 				blockLength = 46;
@@ -584,21 +584,7 @@ void spreadPU(u8 height){
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
 				case 7:
 					OneKey_Hang();
-					if(k210_cfg.map == 0){
-						if(sendflag==0){
-							k210_cfg.mode=1;
-							k210_cfg.go=1;
-							dt.fun[0xf4].WTS=1;                   
-							sendflag=1;
-						}
-						if(k210.next==1){
-							stage = 8;
-							k210_cfg.go=0;
-							k210.next=0;
-							sendflag=0;
-						}
-					}
-				else if(k210_cfg.map != 0 && map[0][step]== 1){
+				if(map[1][step]== 1){
 					if(sendflag==0){
 							k210_cfg.mode=5;
 							//k210_cfg.go=1;
@@ -617,7 +603,10 @@ void spreadPU(u8 height){
 					delay_flag = 1;
 				break;
 				case 8:
-					if(step != 26) Horizontal_Move(blockLength,velocity,direction);
+					if(step == 9) Horizontal_Move(33,33,90);
+					else if(step == 15) Horizontal_Move(33,33,90);
+					else if(step == 29) Horizontal_Move(30,30,0);
+					else if(step != 26) Horizontal_Move(blockLength,velocity,direction);
 					step = step + 1;
 					delaycnt = blockLength * 50 / velocity + 70;
 					delay_flag = 1;
@@ -772,7 +761,8 @@ void spreadPU(u8 height){
 					stage = 26;
 				break;
 				case 26:
-					delaycnt = 100;
+					Horizontal_Move(80,50,180);
+					delaycnt = 150;
 					delay_flag = 1;
 					stage = 27;
 				break;
@@ -812,13 +802,7 @@ void spreadPU(u8 height){
 					stage = 30;
 				break;
 				case 30:
-					Horizontal_Move(openmv.xtotal,20,90);
-					delaycnt = 200;
-					delay_flag = 1;
-					stage = 31;
-				break;
-				case 31:
-					Horizontal_Move(openmv.ytotal,30,180);
+					Horizontal_Move(40,20,90);
 					delaycnt = 200;
 					delay_flag = 1;
 					stage = 10;
