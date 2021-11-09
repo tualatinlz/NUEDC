@@ -77,8 +77,8 @@ void spreadP(u8 height){
 		LX_Change_Mode(3);					//切换到程控模式
 		static u8 xlilun = 38;
 		static u8 ylilun = 30;
-		static u8 xlilunl = 95;
-		static u8 ylilunu = 35; //72
+		static u8 xlilunl = 90;
+		static u8 ylilunu = 38; 
 		
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
@@ -143,8 +143,8 @@ void spreadP(u8 height){
 		//根据平移方向确定距离
 		switch(direction){
 			case 90:
-				blockLength = 47;
-				velocity = 47;
+				blockLength = 46;
+				velocity = 46;
 			break;
 			case 270:
 				blockLength = 52;
@@ -155,8 +155,8 @@ void spreadP(u8 height){
 				velocity = 46;
 			break;
 			case 180:
-				blockLength = 47;
-				velocity = 47;
+				blockLength = 48;
+				velocity = 48;
 			break;
 		}
 		if(delay_flag){
@@ -355,7 +355,7 @@ void spreadP(u8 height){
 					if(ylilun > openmv.ydistance && ylilun - openmv.ydistance > 5) 
 						Horizontal_Move(ylilun-openmv.ydistance,10,0);
 					else if(ylilun < openmv.ydistance && openmv.ydistance - ylilun > 3)
-						Horizontal_Move((openmv.ydistance - ylilun)*3,10,180);
+						Horizontal_Move((openmv.ydistance - ylilun)*3,15,180);
 					openmv.ydistance = ylilun;
 					delaycnt = 150;
 					delay_flag = 1;
@@ -372,9 +372,9 @@ void spreadP(u8 height){
 				break;
 				case 75:
 					if(xlilunl > openmv.xdistancel && xlilunl - openmv.xdistancel > 7) 
-						Horizontal_Move((xlilunl-openmv.xdistancel)*1,10,270);
+						Horizontal_Move((xlilunl-openmv.xdistancel)*1,10,90);
 					else if(xlilunl < openmv.xdistancel && openmv.xdistancel - xlilunl > 5)
-						Horizontal_Move((openmv.xdistancel - xlilunl)*3,10,90);
+						Horizontal_Move((openmv.xdistancel - xlilunl)*3,15,270);
 					openmv.xdistancel = xlilunl;
 					delaycnt = 150;
 					delay_flag = 1;
@@ -425,8 +425,8 @@ void spreadPU(u8 height){
 		LX_Change_Mode(3);					//切换到程控模式
 		static u8 xlilun = 38;
 		static u8 ylilun = 30;
-		static u8 xlilunl = 95;
-		static u8 ylilunu = 35; //72
+		static u8 xlilunl = 90;
+		static u8 ylilunu = 38; //72
 		
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
@@ -491,8 +491,8 @@ void spreadPU(u8 height){
 		//根据平移方向确定距离
 		switch(direction){
 			case 90:
-				blockLength = 47;
-				velocity = 47;
+				blockLength = 46;
+				velocity = 46;
 			break;
 			case 270:
 				blockLength = 52;
@@ -503,8 +503,8 @@ void spreadPU(u8 height){
 				velocity = 46;
 			break;
 			case 180:
-				blockLength = 47;
-				velocity = 47;
+				blockLength = 48;
+				velocity = 48;
 			break;
 		}
 		if(delay_flag){
@@ -686,7 +686,7 @@ void spreadPU(u8 height){
 					Horizontal_Move(k210.number*8,velocity,180);
 					delaycnt = 250;
 					delay_flag = 1;
-					stage=15;
+					stage=61;
 				break;
 				case 61:
 					OneKey_Land();
@@ -715,8 +715,8 @@ void spreadPU(u8 height){
 				break;
 				case 20:
 					Right_Rotate(180,90);
-					stage = 70;
-					delaycnt = 300;
+					stage = 21;
+					delaycnt = 350;
 					delay_flag = 1;
 				break;
 				case 21:
@@ -728,6 +728,7 @@ void spreadPU(u8 height){
 					break;
 				case 22:
 					if(openmv.xoffset !=0 | openmv.yoffset != 0) stage = 23;
+					else if(openmv.ready == 1) stage = 25;
 					else{
 						Horizontal_Move(50,velocity,270);
 						openmv.xtotal += 50;
@@ -735,23 +736,27 @@ void spreadPU(u8 height){
 						delay_flag = 1;
 					}
 				case 23:
-					Horizontal_Move(openmv.xoffset,20,openmv.xdirection*180+90);
-					if(openmv.xdirection == 1)	openmv.xtotal -= openmv.xoffset;
-					else openmv.xtotal += openmv.xoffset;
-					openmv.xoffset = 0;
-					delaycnt = 50;
-					delay_flag = 1;
-					stage=24;
 					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.xoffset,20,openmv.xdirection*180+90);
+						if(openmv.xdirection == 1)	openmv.xtotal -= openmv.xoffset;
+						else openmv.xtotal += openmv.xoffset;
+						openmv.xoffset = 0;
+						delaycnt = 60;
+						delay_flag = 1;
+						stage=24;
+					}
 				break;
 				case 24:
-					Horizontal_Move(openmv.yoffset,20,openmv.ydirection*180);
-					openmv.ytotal += openmv.yoffset;
-					openmv.yoffset = 0;
-					delaycnt = 50;
-					delay_flag = 1;
-					stage=22;
-					if(openmv.ready == 1) stage = 24;
+					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.yoffset,20,openmv.ydirection*180);
+						openmv.ytotal += openmv.yoffset;
+						openmv.yoffset = 0;
+						delaycnt = 70;
+						delay_flag = 1;
+						stage=22;
+					}
 				break;
 				//开始识别条码
 				case 25:
@@ -802,7 +807,7 @@ void spreadPU(u8 height){
 				case 29:	
 					targetHeight = 145;
 					Vertical_Target(145);
-					delaycnt = 100;
+					delaycnt = 200;
 					delay_flag = 1;
 					stage = 30;
 				break;
@@ -813,7 +818,7 @@ void spreadPU(u8 height){
 					stage = 31;
 				break;
 				case 31:
-					Horizontal_Move(openmv.ytotal,20,180);
+					Horizontal_Move(openmv.ytotal,30,180);
 					delaycnt = 200;
 					delay_flag = 1;
 					stage = 10;
@@ -850,7 +855,7 @@ void spreadPU(u8 height){
 					if(ylilun > openmv.ydistance && ylilun - openmv.ydistance > 5) 
 						Horizontal_Move(ylilun-openmv.ydistance,10,0);
 					else if(ylilun < openmv.ydistance && openmv.ydistance - ylilun > 3)
-						Horizontal_Move((openmv.ydistance - ylilun)*3,10,180);
+						Horizontal_Move((openmv.ydistance - ylilun)*3,15,180);
 					openmv.ydistance = ylilun;
 					delaycnt = 150;
 					delay_flag = 1;
@@ -867,9 +872,9 @@ void spreadPU(u8 height){
 				break;
 				case 75:
 					if(xlilunl > openmv.xdistancel && xlilunl - openmv.xdistancel > 7) 
-						Horizontal_Move((xlilunl-openmv.xdistancel)*1,10,270);
+						Horizontal_Move((xlilunl-openmv.xdistancel)*1,10,90);
 					else if(xlilunl < openmv.xdistancel && openmv.xdistancel - xlilunl > 5)
-						Horizontal_Move((openmv.xdistancel - xlilunl)*3,10,90);
+						Horizontal_Move((openmv.xdistancel - xlilunl)*3,15,270);
 					openmv.xdistancel = xlilunl;
 					delaycnt = 150;
 					delay_flag = 1;
