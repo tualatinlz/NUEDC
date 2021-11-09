@@ -10,11 +10,11 @@
 static u16 delaycnt;
 static u8 delay_flag;
 extern int targetHeight;
-//18 25 下标记
-u8 map1[50] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1};
-u8 map2[50] = {1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1};
-u8 map3[50] = {1,1,1,1,1,0,0,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1};
-u8 map4[50] = {1,1,1,1,1,1,0,0,1,1,1,0,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1};
+//第一个双0 下标记25
+u8 map[4][44] ={{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+								{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+								{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+								{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}};
 
 //一级延迟函数 一次延迟20ms
 void delay20(){
@@ -69,22 +69,22 @@ void spreadP(u8 height){
 		u16 maxcnt = 18000;					//最大飞行时间
 		static u8 stage = 19;				//流程执行阶段
 		static u8 sendflag=0;				//发送标志位
-		static u8 step = 15;					//格子走到第几步了
+		static u8 step = 1;					//格子走到第几步了
 		static u8 counterLED = 0;		//LED闪烁次数
 		u8 blockLength = 50;				//格子长度
 		u8 velocity = 50;						//前进速度
 		static u16 direction = 90;	//前进方向 
 		LX_Change_Mode(3);					//切换到程控模式
-		static u8 xlilun = 45;
-		static u8 ylilun = 33;
+		static u8 xlilun = 38;
+		static u8 ylilun = 30;
 		static u8 xlilunl = 95;
-		static u8 ylilunu = 75; //72
+		static u8 ylilunu = 35; //72
 		
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
 			sendflag = 0;
-			step = 15;
+			step = 1;
 			counterLED = 0;
 			hmi.oldmode = hmi.mode;
 		}
@@ -118,19 +118,12 @@ void spreadP(u8 height){
 				break;
 			case 23:direction = 0;
 				break;
-			case 24: //修改了
-							Horizontal_Move(40,40,0);
-							delaycnt = 70;
-							delay_flag = 1;
-							step++;
-				break;
 			case 25:step ++;
-							xlilun = 60;
+							xlilun = 57;
 						  stage = 70;			
 				break;
 			case 27:stage = 72;
-							//ylilun = 35;
-							ylilun = 30; //31
+							ylilun = 32;
 							step ++;
 				break;
 			case 31:direction = 270;
@@ -173,7 +166,6 @@ void spreadP(u8 height){
 			switch(stage){
 				case 0:
 					FC_Unlock();
-					k210.number = 4;
 					stage = 1;
 					delaycnt = 200;
 					delay_flag = 1;
@@ -181,7 +173,7 @@ void spreadP(u8 height){
 				case 1:
 					targetHeight = height;
 					OneKey_Takeoff(height);
-					stage = 7;
+					stage = 2;
 					delaycnt = 200;
 					delay_flag = 1;
 				break;
@@ -244,7 +236,7 @@ void spreadP(u8 height){
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
 				case 7:
 					OneKey_Hang();
-				if(map1[step]== 1){
+				if(map[0][step]== 1){
 					if(sendflag==0){
 							k210_cfg.mode=5;
 							//k210_cfg.go=1;
@@ -340,9 +332,10 @@ void spreadP(u8 height){
 					stage = 71;
 				break;
 				case 71:
-					if(xlilun > openmv.xdistance && xlilun - openmv.xdistance > 3) 
-						Horizontal_Move((xlilun-openmv.xdistance)*3,10,90);
-					else if(xlilun < openmv.xdistance && openmv.xdistance - xlilun > 3)
+					//if(xlilun > openmv.xdistance && xlilun - openmv.xdistance > 5) 
+						//Horizontal_Move((xlilun-openmv.xdistance)*2,10,90);
+					//else 
+						if(xlilun < openmv.xdistance && openmv.xdistance - xlilun > 2)
 						Horizontal_Move((openmv.xdistance - xlilun)*3,10,270);
 					openmv.xdistance = xlilun;
 					delaycnt = 150;
@@ -361,7 +354,7 @@ void spreadP(u8 height){
 				case 73:
 					if(ylilun > openmv.ydistance && ylilun - openmv.ydistance > 5) 
 						Horizontal_Move(ylilun-openmv.ydistance,10,0);
-					else if(ylilun < openmv.ydistance && openmv.ydistance - ylilun > 5)
+					else if(ylilun < openmv.ydistance && openmv.ydistance - ylilun > 3)
 						Horizontal_Move((openmv.ydistance - ylilun)*3,10,180);
 					openmv.ydistance = ylilun;
 					delaycnt = 150;
@@ -382,7 +375,7 @@ void spreadP(u8 height){
 						Horizontal_Move((xlilunl-openmv.xdistancel)*1,10,270);
 					else if(xlilunl < openmv.xdistancel && openmv.xdistancel - xlilunl > 5)
 						Horizontal_Move((openmv.xdistancel - xlilunl)*3,10,90);
-					//openmv.xdistancel = xlilunl;
+					openmv.xdistancel = xlilunl;
 					delaycnt = 150;
 					delay_flag = 1;
 					sendflag = 0;
@@ -397,12 +390,12 @@ void spreadP(u8 height){
 					stage = 77;
 				break;
 				case 77:
-					if(ylilunu > openmv.ydistanceu && ylilunu - openmv.ydistanceu > 5) 
-						Horizontal_Move((ylilunu-openmv.ydistanceu)*3,10,180);
+					if(ylilunu > openmv.ydistanceu && ylilunu - openmv.ydistanceu > 3) 
+						Horizontal_Move((ylilunu-openmv.ydistanceu)*2,10,180);
 					else if(ylilunu < openmv.ydistanceu && openmv.ydistanceu - ylilunu > 5)
 						Horizontal_Move(openmv.ydistanceu - ylilunu,10,0);
 					openmv.ydistance = ylilun;
-					delaycnt = 150;
+					delaycnt = 200;
 					delay_flag = 1;
 					sendflag = 0;
 					stage = 7;
@@ -528,7 +521,7 @@ void spreadPU(u8 height){
 			switch(stage){
 				case 0:
 					FC_Unlock();
-					k210.number = 4;
+					if(k210.number == 0) k210.number = 4;
 					stage = 1;
 					delaycnt = 200;
 					delay_flag = 1;
@@ -536,7 +529,7 @@ void spreadPU(u8 height){
 				case 1:
 					targetHeight = height;
 					OneKey_Takeoff(height);
-					stage = 7;
+					stage = 2;
 					delaycnt = 200;
 					delay_flag = 1;
 				break;
@@ -599,7 +592,21 @@ void spreadPU(u8 height){
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
 				case 7:
 					OneKey_Hang();
-				if(map1[step]== 1){
+				if(k210_cfg.map == 0){
+				if(sendflag==0){
+							k210_cfg.mode=2;
+							k210_cfg.go=1;
+							dt.fun[0xf4].WTS=1;                   
+							sendflag=1;
+					}
+					if(k210.next==1){
+						stage = 8;
+						k210_cfg.go=0;
+						k210.next=0;
+						sendflag=0;
+					}
+				}
+					else if(k210_cfg.map != 0 && map[k210_cfg.map][step]== 1){
 					if(sendflag==0){
 							k210_cfg.mode=5;
 							//k210_cfg.go=1;
@@ -613,7 +620,7 @@ void spreadPU(u8 height){
 						sendflag=0;
 					}
 				}
-				else stage = 8;
+					else stage = 8;
 					delaycnt = 25;
 					delay_flag = 1;
 				break;
@@ -920,7 +927,7 @@ void spreadPUoo(u8 height){
 		u8 velocity = 50;						//前进速度
 		static u16 direction = 90;	//前进方向 
 		LX_Change_Mode(3);					//切换到程控模式
-		static u8 xlilun = 50;
+		static u8 xlilun = 47;
 		static u8 ylilun = 90;
 		
 		if(hmi.mode != hmi.oldmode){

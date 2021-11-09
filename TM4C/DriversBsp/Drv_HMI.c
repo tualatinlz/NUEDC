@@ -100,13 +100,13 @@ static void HMI_DataAnl(uint8_t *data, uint8_t len)
 			openmv_cfg.b2 = *(data + 10);
 			dt.fun[0xf7].WTS = 1; //标记CMD等待发送
 		}
-		else if(*(data + 4) == 4){ //K210模式切换
-			k210_cfg.mode=*(data + 5);	
-			dt.fun[0xf4].WTS=1;			 //标记CMD等待发送
+		else if(*(data + 4) == 4){ //K210地图切换
+			k210_cfg.map=*(data + 5);	
+			//dt.fun[0xf4].WTS=1;			 //标记CMD等待发送
 		}
 		else if(*(data + 4) == 5){ //OpenMV模式切换
-			openmv_cfg.mode = *(data + 5);
-			dt.fun[0xf6].WTS = 1; //标记CMD等待发送
+			k210.number = *(data + 5);
+			//dt.fun[0xf6].WTS = 1; //标记CMD等待发送
 		}
 	}
 }
