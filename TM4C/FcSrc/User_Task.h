@@ -9,7 +9,7 @@ void UserTask_OneKeyCmd(void);
 void spreadP(u8 height);
 void spreadPU(u8 height);
 void customF(void);
-void blink(void);
+void blink(u8 color);
 void test(u16 height,u16 dh);
 //void Take_Photos(void);
 #endif

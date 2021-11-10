@@ -1,0 +1,12 @@
+*** Using Compiler 'V5.06 update 7 (build 960)', folder: 'C:\Users\eDesign\AppData\Roaming\Keil5\ARM\ARMCC\Bin'
+Build target 'Ano_LX'
+compiling User_Task.c...
+..\FcSrc\User_Task.c(73): warning:  #550-D: variable "counterLED"  was set but never used
+  		static u8 counterLED = 0;		//LED…¡À∏¥Œ ˝
+..\FcSrc\User_Task.c(433): warning:  #177-D: variable "ylilunu"  was declared but never referenced
+  		static u8 ylilunu = 38;
+..\FcSrc\User_Task.c: 2 warnings, 0 errors
+linking...
+Program Size: Code=21364 RO-data=1812 RW-data=1644 ZI-data=6132  
+".\build\ANO_PioneerPro_Ti.axf" - 0 Error(s), 2 Warning(s).
+Build Time Elapsed:  00:00:01
