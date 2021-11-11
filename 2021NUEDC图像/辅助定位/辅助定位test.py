@@ -12,11 +12,11 @@ sensor.set_auto_gain(True) # True开启；False关闭，使用颜色追踪时，
 sensor.set_auto_whitebal(True) # True开启；False关闭，使用颜色追踪时，需关闭
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
-sensor.set_windowing((90,30,150,150)) # ((0,130,320,110))
+sensor.set_windowing((0,130,320,110)) # ((0,130,320,110))
 sensor.skip_frames(time = 2000)     # WARNING: If you use QQVGA it may take seconds
 clock = time.clock()                # to process a frame sometimes. 140 90 50 20
 class ctrl(object):
-    work_mode = 0x00 #工作模式，可以通过串口设置成其他模式
+    work_mode = 0x01 #工作模式，可以通过串口设置成其他模式
 ctrl=ctrl()
 uart = UART(3,115200)
 def change_mod():
@@ -25,18 +25,16 @@ def change_mod():
         if(len(txt)>=6):
             if(txt[0]==0xAA):
                 if(txt[1]==0xff):
-                    if(txt[4]==0x01):
-                        sensor.set_windowing((0,130,320,110))  #模式一换window
                     if(txt[4]==0x02):
                         sensor.set_windowing((100,0,120,180))  #模式二换window
-                    if(txt[4]==0x05):
-                        sensor.set_windowing((146,67,100,130)) #模式大于五换window
-                    if(txt[4]>=0x06):
-                        sensor.set_windowing((90,30,150,150)) #模式大于五换window
+                        sensor.skip_frames(time = 1000)
+                    if(txt[4]==0x02):
+                        sensor.set_windowing((100,0,120,180))  #模式二换window
+                        sensor.skip_frames(time = 1000)
                     ctrl.work_mode=txt[4]
 class find_b(object):
     def __init__(self):
-        self.GRAYSCALE_THRESHOLD = [(29, 75, -45, -17, -4, 47)]#(57, 100, -47, -3, 8, 45)
+        self.GRAYSCALE_THRESHOLD = [(57, 75, -45, -12, -4, 47)]#(57, 100, -47, -3, 8, 45)
 
     def get_dis(self,dat,daty,datw):
         a =[0xAA,0xFF,0xf1,0x05,0x04,0x00,0x00,0x00,0x00,0x00,0x00]
@@ -89,10 +87,10 @@ class find_b(object):
 
     def find(self,img):
         if (ctrl.work_mode==0x05):
-            self.GRAYSCALE_THRESHOLD = [(43, 92, -11, 50, -27, 37)]   #淡灰色
+            self.GRAYSCALE_THRESHOLD = [(57, 75, -45, -12, -4, 47)]  #淡灰色
         else:
-            self.GRAYSCALE_THRESHOLD = [(29, 75, -45, -12, -4, 47)]
-        blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, pixels_threshold=1500, area_threshold=50, merge=True, margin=5)#5
+            self.GRAYSCALE_THRESHOLD = [(57, 75, -45, -12, -4, 47)]
+        blobs = img.find_blobs(self.GRAYSCALE_THRESHOLD, pixels_threshold=2000, area_threshold=50, merge=True, margin=20)#5
         if blobs:
             # 查找像素最多的blob的索引。
             largest_blob = 0
@@ -112,38 +110,40 @@ class find_b(object):
 
 
             if(ctrl.work_mode==0x05):     #判断为拐点
-                self.get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
+                get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
             if(ctrl.work_mode==0x06):     #判断为左下角
-                self.get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
+                get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
             if(ctrl.work_mode==0x07):     #判断为右下角
-                self.get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
+                get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
             if(ctrl.work_mode==0x08):     #判断为左上角
-                self.get_disnew(blobs[largest_blob].w(),blobs[largest_blob].y())
+                get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
             if(ctrl.work_mode==0x09):     #判断为右上角
-                self.get_disnew(blobs[largest_blob].w(),blobs[largest_blob].y())
+                get_disnew(blobs[largest_blob].w(),blobs[largest_blob].h())
             px=blobs[largest_blob].x()/2
             py=blobs[largest_blob].h()/2
             pw=(blobs[largest_blob].w()+blobs[largest_blob].x())/2
             ph=(blobs[largest_blob].h()+blobs[largest_blob].y())/2  #改了
-            print("x:")
-            print(px)
-            print("y dier:")
-            print(py)
-            print("w:")
-            print(pw)
+            print("newwwwww:")
+            print(blobs[largest_blob].w())
+            print("newhhhhh:")
+            print(blobs[largest_blob].h())
             if(ctrl.work_mode==0x01):
                 self.get_dis(px,py,pw)
             if(ctrl.work_mode==0x02):
                 self.get_diswindow(ph)    #改了 py
             blobs[largest_blob].w()
-            ctrl.work_mode=0x00   #记得改
+            ctrl.work_mode=0x01   #记得改
 
 mode2=find_b()
+ctrl.work_mode = 0x01
+if(ctrl.work_mode>=0x05):
+    sensor.set_windowing((100,60,120,120))  #模式二换window
+    sensor.skip_frames(time = 1000)
 while(True):
     clock.tick()
-    change_mod()
     img = sensor.snapshot()#.binary([THRESHOLD])
     img.lens_corr(1.7)
+    change_mod()
     if (ctrl.work_mode==0x00):#MODE1 待机
         True
     if (ctrl.work_mode==0x01):#MODE2 开始找杆
