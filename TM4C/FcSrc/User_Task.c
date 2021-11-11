@@ -11,8 +11,8 @@ static u16 delaycnt;
 static u8 delay_flag;
 extern int targetHeight;
 //第一个双0 下标记25
-u8 map[4][44] ={{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+u8 map[2][44] ={{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+				{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 				};
 
 //一级延迟函数 一次延迟20ms
@@ -48,6 +48,12 @@ void UserTask_OneKeyCmd(void)
 				break;
 			case 0x06:customF();
 				break;
+			case 0x07:openmv_cfg.mode = 6;
+					dt.fun[0xf6].WTS = 1;
+					hmi.mode = 0;
+				break;
+			case 0x08:drawNum(145);
+				break;
 			case 0x10:Horizontal_Calibrate();
 								hmi.mode = 0;
 				break;
@@ -60,84 +66,118 @@ void UserTask_OneKeyCmd(void)
 			case 0x13:GYR_Calibrate();
 								hmi.mode = 0;
 				break;
+			default:
+				break;
 		}
 }
 
 void spreadP(u8 height){
 		static u16 counter = 0;			//飞行时间计数
 		counter ++;
-		u16 maxcnt = 18000;					//最大飞行时间
-		static u8 stage = 19;				//流程执行阶段
-		static u8 sendflag=0;				//发送标志位
-		static u8 step = 1;					//格子走到第几步了
+		u16 maxcnt = 18000;				//最大飞行时间
+		static u8 stage = 0;			//流程执行阶段
+		static u8 sendflag=0;			//发送标志位
+		static u8 corrflag=0;			//校正标志位
+		static u8 step = 1;				//格子走到第几步了
 		static u8 counterLED = 0;		//LED闪烁次数
-		u8 blockLength = 50;				//格子长度
-		u8 velocity = 50;						//前进速度
-		static u16 direction = 90;	//前进方向 
-		LX_Change_Mode(3);					//切换到程控模式
+		u8 blockLength = 50;			//格子长度
+		u8 velocity = 50;				//前进速度
+		static u16 direction = 90;		//前进方向 
+		LX_Change_Mode(3);				//切换到程控模式
 		static u8 xlilun = 38;
 		static u8 ylilun = 30;
 		static u8 xlilunl = 90;
-		static u8 ylilunu = 38; 
 		
 		if(hmi.mode != hmi.oldmode){
 			counter = 0;
 			stage = 0;
 			sendflag = 0;
+			corrflag=0;
 			step = 1;
 			counterLED = 0;
 			hmi.oldmode = hmi.mode;
 		}
 		switch(step){
 			case 4:direction = 180;
+					if(corrflag == 0){
+						stage = 80;
+						openmv_cfg.mode = 5;
+						xlilun = 78;
+						ylilun = 101;
+						corrflag = 1;
+					}
 				break;
-			case 6:direction = 180;
-						step++;
-						stage = 74;
+			case 6:
+					//if(corrflag == 0){
+					//	stage = 74;
+					//	xlilunl = 85;
+					//	corrflag = 1;
+					//}
 				break;
-			case 9:direction = 90;
+			case 8:direction = 90;
+					if(corrflag == 0){
+						xlilun = 83;
+						ylilun = 78;
+						stage = 80;
+						openmv_cfg.mode = 6;
+						corrflag = 1;
+					}
 				break;
-			case 10:direction = 0;
-						//stage = 70;
+			case 9:direction = 0;
 				break;
-			case 12:
+			case 11:
+					if(corrflag == 0){
 						stage = 72;
-						step ++;
+						ylilun = 32;
+						corrflag = 1;
+					}
 				break;
-			case 15:direction = 90;
+			case 13:direction = 90;
 				break;
-			case 16:direction = 180;
-							step ++;
-						  stage = 70;
+			case 14:direction = 180;
 				break;
-			case 22:
-							Horizontal_Move(30,30,90);
-							delaycnt = 60;
-							delay_flag = 1;
-							step++;
+			case 18:direction = 90;
 				break;
-			case 23:direction = 0;
+			case 19:direction = 0;
+				if(corrflag == 0){
+					stage = 80;
+					openmv_cfg.mode = 7;
+					xlilun = 131;
+					ylilun = 70;
+					corrflag = 1;
+				}
 				break;
-			case 25:step ++;
-							xlilun = 57;
-						  stage = 70;			
+			case 21:
+				if(corrflag == 0){
+					stage = 72;
+					ylilun = 32;//x=57
+					corrflag = 1;
+				}		
 				break;
-			case 27:stage = 72;
-							ylilun = 32;
-							step ++;
+			case 24:direction = 270;
+				if(corrflag == 0){
+					stage = 80;
+					openmv_cfg.mode = 8;
+					xlilun = 130;
+					ylilun = 14;
+					corrflag = 1;
+				}
 				break;
-			case 31:direction = 270;
-							step ++;
-							stage = 76;
+			case 30:direction = 180;
+				if(corrflag == 0){
+					stage = 80;
+					xlilun = 106;
+					ylilun = 10;
+					openmv_cfg.mode = 9;
+					corrflag = 1;
+				}
 				break;
-			case 39:Horizontal_Move(blockLength,velocity,180);
-							step++;
-							delaycnt=70;
-							delay_flag=1;
-							stage = 10;
+			case 31:
+				stage = 10;
+				step++;
 				break;
-				default:
-					break;
+			default:
+				break;
 		}
 		
 		//根据平移方向确定距离
@@ -147,8 +187,8 @@ void spreadP(u8 height){
 				velocity = 46;
 			break;
 			case 270:
-				blockLength = 52;
-				velocity = 52;
+				blockLength = 50;
+				velocity = 50;
 			break;
 			case 0:
 				blockLength = 46;
@@ -193,21 +233,21 @@ void spreadP(u8 height){
 				case 4:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 130;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage=5;
 				break;
 				case 5:
 					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
 					k210.yoffset = 0;
-					delaycnt = 70;
+					delaycnt = 50;
 					delay_flag = 1;
 					stage=6;
 				break;
 				case 6:
 					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
 					k210.xoffset = 0;
-					delaycnt = 70;
+					delaycnt = 50;
 					delay_flag = 1;
 					stage=104;
 				break;
@@ -215,60 +255,62 @@ void spreadP(u8 height){
 				case 104:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 130;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage=105;
 				break;
 				case 105:
 					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
 					k210.yoffset = 0;
-					delaycnt = 70;
+					delaycnt = 50;
 					delay_flag = 1;
 					stage=106;
 				break;
 				case 106:
 					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
 					k210.xoffset = 0;
-					delaycnt = 70;
+					delaycnt = 50;
 					delay_flag = 1;
 					stage=7;
 				break;
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
 				case 7:
 					OneKey_Hang();
-				if(map[0][step]== 1){
-					if(sendflag==0){
+					if(map[0][step]== 1){
+						if(sendflag==0){
 							k210_cfg.mode=5;
 							//k210_cfg.go=1;
 							dt.fun[0xf4].WTS=1;                   
 							sendflag=1;
+						}
+						if(k210.next==1){
+							stage = 8;
+							k210_cfg.go=0;
+							k210.next=0;
+							sendflag=0;
+						}
 					}
-					if(k210.next==1){
-						stage = 8;
-						k210_cfg.go=0;
-						k210.next=0;
-						sendflag=0;
-					}
-				}
-				else stage = 8;
+					else stage = 8;
 					delaycnt = 25;
 					delay_flag = 1;
 				break;
 				case 8:
-					if(step == 9) Horizontal_Move(33,33,90);
-					//else if(step == 15) Horizontal_Move(33,33,90);
-					else if(step == 30) Horizontal_Move(43,43,0);
-					else if(step != 26) Horizontal_Move(blockLength,velocity,direction);
+					//if(step == 8) Horizontal_Move(37,37,90);
+					if(step == 13) Horizontal_Move(43,43,90);
+					//else if(step == 18) Horizontal_Move(37,37,90);
+					//else if(step == 29) Horizontal_Move(40,40,0);
+					else Horizontal_Move(blockLength,velocity,direction);
 					step = step + 1;
-					delaycnt = blockLength * 50 / velocity + 70;
+					delaycnt = blockLength * 50 / velocity + 50;
 					delay_flag = 1;
+					corrflag = 0;
 					stage=7;
 				break;
 				//惯导返航
 				case 10:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 200;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage=11;
 				break;
@@ -302,43 +344,224 @@ void spreadP(u8 height){
 				case 114:
 					k210_cfg.mode=3;
 					dt.fun[0xf4].WTS=1;
-					delaycnt = 200;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage = 15;
 				break;
 				//根据十字位置判断飞机位置，K210控制飞机调整降落点
 				case 15:
-					Horizontal_Move(k210.xoffset,50,k210.xdirection*180+90);
-					k210.xoffset = 0;
-					delaycnt = 50;
-					delay_flag = 1;
-					stage=16;
-					if(k210.land == 1) stage = 60;
+					if(k210.land == 1){
+						Vertical_Down(55,40);
+						targetHeight = 90;
+						stage = 60;
+						delaycnt = 200;
+						delay_flag = 1;
+					}
+					else if(k210.xoffset ==0 && k210.yoffset ==0){
+						Horizontal_Move(20,20,270);
+						delaycnt = 60;
+						delay_flag = 1;
+					}
+					else{
+						Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+						k210.xoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=16;
+					}
 				break;
 				case 16:
-					Horizontal_Move(k210.yoffset,50,k210.ydirection*180);
-					k210.yoffset = 0;
-					delaycnt = 50;
-					delay_flag = 1;
-					stage=15;
-					if(k210.land == 1) stage = 60;
+					if(k210.land == 1){
+						Vertical_Down(55,40);
+						targetHeight = 90;
+						stage = 60;
+						delaycnt = 200;
+						delay_flag = 1;
+					}
+					else{
+						Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+						k210.yoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=15;
+					}
 				break;
 				case 60:
+					k210.land = 0;
+					k210_cfg.mode=3;
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 150;
+					delay_flag = 1;
+					stage = 61;
+				break;
+				case 61:
+					if(k210.land == 1){
+						stage = 63;
+					}
+					else{
+						Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+						k210.yoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=62;
+					}
+				break;
+				case 62:
+					if(k210.land == 1){
+						stage = 63;
+					}
+					else{
+						Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+						k210.yoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=61;
+					}
+				break;
+				case 63:
 					OneKey_Land();
+					hmi.mode = 0;
+				break;
+				//寻找杆子和二维码位置
+				case 50:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 200;
+					delay_flag = 1;
+					stage=51;
+				break;
+				case 51:
+					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+					k210.yoffset = 0;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=52;
+				break;
+				case 52:
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+					k210.xoffset = 0;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=20;
+				break;
+				case 20:
+					Right_Rotate(180,90);
+					stage = 21;
+					delaycnt = 350;
+					delay_flag = 1;
+				break;
+				case 21:
+					openmv_cfg.mode = 1;
+					dt.fun[0xf6].WTS= 1;
+					delaycnt = 100;
+					delay_flag = 1;
+					stage = 22;
+					break;
+				case 22:
+					if(openmv.xoffset !=0 | openmv.yoffset != 0) stage = 23;
+					else if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(50,velocity,270);
+						openmv.xtotal += 50;
+						delaycnt = 200;
+						delay_flag = 1;
+					}
+				case 23:
+					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.xoffset,20,openmv.xdirection*180+90);
+						if(openmv.xdirection == 1)	openmv.xtotal -= openmv.xoffset;
+						else openmv.xtotal += openmv.xoffset;
+						openmv.xoffset = 0;
+						delaycnt = 60;
+						delay_flag = 1;
+						stage=24;
+					}
+				break;
+				case 24:
+					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.yoffset,20,openmv.ydirection*180);
+						openmv.ytotal += openmv.yoffset;
+						openmv.yoffset = 0;
+						delaycnt = 70;
+						delay_flag = 1;
+						stage=22;
+					}
+				break;
+				//开始识别条码
+				case 25:
+					openmv_cfg.mode=0;
+					dt.fun[0xf6].WTS=1;
+					//高度调整
+					targetHeight = 115;
+					Vertical_Down(35,10);
+					k210_cfg.mode=4;
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 250;
+					delay_flag = 1;
+					stage = 26;
+				break;
+				case 26:
+					Horizontal_Move(openmv.ytotal - 20,50,180);
+					delaycnt = 150;
+					delay_flag = 1;
+					stage = 27;
+				break;
+				//识别到数字后闪烁
+				case 27:
+					blink(7);
+					delaycnt = 30;
+					delay_flag = 1;
+					counterLED++;
+					//2*数字
+					if(counterLED >= 2*k210.number){
+						delaycnt = 150;
+						delay_flag = 1;
+						stage = 28;
+						counterLED = 0;
+					}
+				break;
+				case 28:
+					blink(7);
+					delaycnt = 30;
+					delay_flag = 1;
+					counterLED++;
+					//2*数字
+					if(counterLED >= 2*k210.number){
+						delaycnt = 150;
+						delay_flag = 1;
+						stage = 29;
+						counterLED = 0;
+					}
+				break;
+					//返回初始高度
+				case 29:	
+					targetHeight = 145;
+					Vertical_Target(145);
+					delaycnt = 200;
+					delay_flag = 1;
+					stage = 30;
+				break;
+				case 30:
+					Horizontal_Move(20,20,90);
+					delaycnt = 200;
+					delay_flag = 1;
+					stage = 10;
 				break;
 				//x校正
 				case 70:
 					openmv_cfg.mode = 2;
 					dt.fun[0xf6].WTS = 1;
-					delaycnt = 200;
+					delaycnt = 70;
 					delay_flag = 1;
 					stage = 71;
 				break;
 				case 71:
-					//if(xlilun > openmv.xdistance && xlilun - openmv.xdistance > 5) 
+					//if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 5) 
 						//Horizontal_Move((xlilun-openmv.xdistance)*2,10,90);
 					//else 
-						if(xlilun < openmv.xdistance && openmv.xdistance - xlilun > 2)
+						if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 3)
 						Horizontal_Move((openmv.xdistance - xlilun)*3,10,270);
 					openmv.xdistance = xlilun;
 					delaycnt = 150;
@@ -350,14 +573,14 @@ void spreadP(u8 height){
 				case 72:
 					openmv_cfg.mode = 2;
 					dt.fun[0xf6].WTS = 1;
-					delaycnt = 200;
+					delaycnt = 70;
 					delay_flag = 1;
 					stage = 73;
 				break;
 				case 73:
-					if(ylilun > openmv.ydistance && ylilun - openmv.ydistance > 5) 
+					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 5) 
 						Horizontal_Move(ylilun-openmv.ydistance,10,0);
-					else if(ylilun < openmv.ydistance && openmv.ydistance - ylilun > 3)
+					else if(openmv.ydistance > ylilun  && openmv.ydistance - ylilun > 3)
 						Horizontal_Move((openmv.ydistance - ylilun)*3,15,180);
 					openmv.ydistance = ylilun;
 					delaycnt = 150;
@@ -369,14 +592,14 @@ void spreadP(u8 height){
 				case 74:
 					openmv_cfg.mode = 2;
 					dt.fun[0xf6].WTS = 1;
-					delaycnt = 200;
+					delaycnt = 70;
 					delay_flag = 1;
 					stage = 75;
 				break;
 				case 75:
-					if(xlilunl > openmv.xdistancel && xlilunl - openmv.xdistancel > 7) 
+					if(openmv.xdistancel < xlilunl && xlilunl - openmv.xdistancel > 7) 
 						Horizontal_Move((xlilunl-openmv.xdistancel)*1,10,90);
-					else if(xlilunl < openmv.xdistancel && openmv.xdistancel - xlilunl > 5)
+					else if(openmv.xdistancel > xlilunl && openmv.xdistancel - xlilunl > 5)
 						Horizontal_Move((openmv.xdistancel - xlilunl)*3,15,270);
 					openmv.xdistancel = xlilunl;
 					delaycnt = 150;
@@ -385,20 +608,96 @@ void spreadP(u8 height){
 					stage = 7;
 				break;
 					//y修正
-				case 76:
-					openmv_cfg.mode = 3;
+				//case 76:
+				//	openmv_cfg.mode = 3;
+				//	dt.fun[0xf6].WTS = 1;
+				//	delaycnt = 70;
+				//	delay_flag = 1;
+				//	stage = 77;
+				//break;
+				//case 77:
+				//	if(openmv.ydistanceu < ylilunu && ylilunu - openmv.ydistanceu > 3) 
+				//		Horizontal_Move((ylilunu-openmv.ydistanceu)*2,10,180);
+				//	else if(openmv.ydistanceu > ylilunu && openmv.ydistanceu - ylilunu > 5)
+				//		Horizontal_Move(openmv.ydistanceu - ylilunu,10,0);
+				//	openmv.ydistance = ylilun;
+				//	delaycnt = 130;
+				//	delay_flag = 1;
+				//	sendflag = 0;
+				//	stage = 7;
+				//break;
+				case 80:
 					dt.fun[0xf6].WTS = 1;
-					delaycnt = 250;
+					delaycnt = 70;
 					delay_flag = 1;
-					stage = 77;
+					stage = 81;
 				break;
-				case 77:
-					if(ylilunu > openmv.ydistanceu && ylilunu - openmv.ydistanceu > 3) 
-						Horizontal_Move((ylilunu-openmv.ydistanceu)*2,10,180);
-					else if(ylilunu < openmv.ydistanceu && openmv.ydistanceu - ylilunu > 5)
-						Horizontal_Move(openmv.ydistanceu - ylilunu,10,0);
-					openmv.ydistance = ylilun;
-					delaycnt = 200;
+				case 81:
+					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 4){ 
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                            case 6:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+							case 7:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+                            case 8:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+                            case 9:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+                        }
+                    }
+					else if(openmv.ydistance > ylilun && openmv.ydistance - ylilun > 4){
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+              				case 6:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+							case 7:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                            case 8:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                            case 9:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                        }
+                    }
+					//openmv.ydistance = ylilun;
+					delaycnt = 150;
+					delay_flag = 1;
+					sendflag = 0;
+					stage = 82;
+				break;
+				case 82:
+					if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 4){
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 6:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 7:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 8:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 9:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                        }
+                    }
+					else if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 4){
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 6:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 7:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 8:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 9:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                        }
+                    }
+					//openmv.xdistance = xlilun;
+					delaycnt = 150;
 					delay_flag = 1;
 					sendflag = 0;
 					stage = 7;
@@ -415,6 +714,1026 @@ void spreadP(u8 height){
 }
 
 void spreadPU(u8 height){
+		static u16 counter = 0;			//飞行时间计数
+		counter ++;
+		u16 maxcnt = 18000;				//最大飞行时间
+		static u8 stage = 0;			//流程执行阶段
+		static u8 sendflag=0;			//发送标志位
+		static u8 corrflag=0;			//校正标志位
+		static u8 step = 1;				//格子走到第几步了
+		static u8 counterLED = 0;		//LED闪烁次数
+		u8 blockLength = 50;			//格子长度
+		u8 velocity = 50;				//前进速度
+		static u16 direction = 90;		//前进方向 
+		LX_Change_Mode(3);				//切换到程控模式
+		static u8 xlilun = 38;
+		static u8 ylilun = 30;
+		static u8 xlilunl = 90;
+		
+		if(hmi.mode != hmi.oldmode){
+			counter = 0;
+			stage = 0;
+			sendflag = 0;
+			corrflag=0;
+			step = 1;
+			counterLED = 0;
+			hmi.oldmode = hmi.mode;
+		}
+		switch(step){
+			case 4:direction = 180;
+					if(corrflag == 0){
+						stage = 80;
+						openmv_cfg.mode = 5;
+						xlilun = 78;
+						ylilun = 101;
+						corrflag = 1;
+					}
+				break;
+			case 6:
+					//if(corrflag == 0){
+					//	stage = 74;
+					//	xlilunl = 85;
+					//	corrflag = 1;
+					//}
+				break;
+			case 8:direction = 90;
+					if(corrflag == 0){
+						xlilun = 83;
+						ylilun = 78;
+						stage = 80;
+						openmv_cfg.mode = 6;
+						corrflag = 1;
+					}
+				break;
+			case 9:direction = 0;
+				break;
+			case 11:
+					if(corrflag == 0){
+						stage = 72;
+						ylilun = 32;
+						corrflag = 1;
+					}
+				break;
+			case 13:direction = 90;
+				break;
+			case 14:direction = 180;
+				break;
+			case 18:direction = 90;
+				break;
+			case 19:direction = 0;
+				if(corrflag == 0){
+					stage = 80;
+					openmv_cfg.mode = 7;
+					xlilun = 131;
+					ylilun = 70;
+					corrflag = 1;
+				}
+				break;
+			case 21:
+				if(corrflag == 0){
+					stage = 72;
+					ylilun = 32;//x=57
+					corrflag = 1;
+				}		
+				break;
+			case 24:direction = 270;
+				if(corrflag == 0){
+					stage = 80;
+					openmv_cfg.mode = 8;
+					xlilun = 130;
+					ylilun = 14;
+					corrflag = 1;
+				}
+				break;
+			case 30:direction = 180;
+				if(corrflag == 0){
+					stage = 80;
+					xlilun = 106;
+					ylilun = 10;
+					openmv_cfg.mode = 9;
+					corrflag = 1;
+				}
+				break;
+			case 31:
+				stage = 50;
+				step++;
+				break;
+			default:
+				break;
+		}
+		
+		//根据平移方向确定距离
+		switch(direction){
+			case 90:
+				blockLength = 46;
+				velocity = 46;
+			break;
+			case 270:
+				blockLength = 50;
+				velocity = 50;
+			break;
+			case 0:
+				blockLength = 46;
+				velocity = 46;
+			break;
+			case 180:
+				blockLength = 48;
+				velocity = 48;
+			break;
+		}
+		if(delay_flag){
+			delay20();
+		}
+		else{
+			switch(stage){
+				case 0:
+					FC_Unlock();
+					stage = 1;
+					delaycnt = 200;
+					delay_flag = 1;
+				break;
+				case 1:
+					targetHeight = height;
+					OneKey_Takeoff(height);
+					stage = 2;
+					delaycnt = 200;
+					delay_flag = 1;
+				break;
+				case 2:
+					Horizontal_Move(4*40,velocity,0);
+					stage = 3;
+					delaycnt = 250;
+					delay_flag = 1;
+				break;
+				case 3:
+					Horizontal_Move(20,velocity,90); 
+					delaycnt = 100;
+					delay_flag = 1;
+					stage=4;
+				break;	
+				//K210开启字母识别，根据A位置调整
+				case 4:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 150;
+					delay_flag = 1;
+					stage=5;
+				break;
+				case 5:
+					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+					k210.yoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=6;
+				break;
+				case 6:
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+					k210.xoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=104;
+				break;
+				//K210开启字母识别，根据A位置调整
+				case 104:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 150;
+					delay_flag = 1;
+					stage=105;
+				break;
+				case 105:
+					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+					k210.yoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=106;
+				break;
+				case 106:
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+					k210.xoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=7;
+				break;
+				//请求K210判断是否绿色，接到判断完毕指令后前进一格
+				case 7:
+					OneKey_Hang();
+					if(k210_cfg.map == 0){
+						if(sendflag==0){
+							k210_cfg.mode=1;
+							k210_cfg.go=1;
+							dt.fun[0xf4].WTS=1;                   
+							sendflag=1;
+						}
+						if(k210.next==1){
+							stage = 8;
+							k210_cfg.go=0;
+							k210.next=0;
+							sendflag=0;
+						}
+					}
+					else if(map[k210_cfg.map][step]== 1){
+						if(sendflag==0){
+							k210_cfg.mode=5;
+							//k210_cfg.go=1;
+							dt.fun[0xf4].WTS=1;                   
+							sendflag=1;
+						}
+						if(k210.next==1){
+							stage = 8;
+							k210_cfg.go=0;
+							k210.next=0;
+							sendflag=0;
+						}
+					}
+					else stage = 8;
+					delaycnt = 25;
+					delay_flag = 1;
+				break;
+				case 8:
+					//if(step == 8) Horizontal_Move(37,37,90);
+					if(step == 13) Horizontal_Move(43,43,90);
+					//else if(step == 18) Horizontal_Move(37,37,90);
+					//else if(step == 29) Horizontal_Move(40,40,0);
+					else Horizontal_Move(blockLength,velocity,direction);
+					step = step + 1;
+					delaycnt = blockLength * 50 / velocity + 50;
+					delay_flag = 1;
+					corrflag = 0;
+					stage=7;
+				break;
+				//惯导返航
+				//case 10:
+				//	k210_cfg.mode=2;	
+				//	dt.fun[0xf4].WTS=1; 
+				//	delaycnt = 150;
+				//	delay_flag = 1;
+				//	stage=11;
+				//break;
+				//case 11:
+				//	Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+				//	k210.yoffset = 0;
+				//	delaycnt = 70;
+				//	delay_flag = 1;
+				//	stage=12;
+				//break;
+				//case 12:
+				//	Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+				//	k210.xoffset = 0;
+				//	delaycnt = 70;
+				//	delay_flag = 1;
+				//	stage=13;
+				//break;
+				//原路返回
+				case 13:
+					Horizontal_Move(40,velocity,90);
+					delaycnt = 150;
+					delay_flag = 1;
+					stage=14;
+				break;
+				case 14:
+					Horizontal_Move(190,velocity,0);
+					delaycnt = 260;
+					delay_flag = 1;
+					stage=114;
+				break;
+				case 114:
+					k210_cfg.mode=6;
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 150;
+					delay_flag = 1;
+					stage = 15;
+				break;
+				//根据十字位置判断飞机位置，K210控制飞机调整降落点
+				case 15:
+					if(k210.land == 1){
+						Vertical_Down(55,40);
+						targetHeight = 90;
+						stage = 60;
+						delaycnt = 200;
+						delay_flag = 1;
+					}
+					else if(k210.xoffset ==0 && k210.yoffset ==0){
+						Horizontal_Move(20,20,270);
+						delaycnt = 60;
+						delay_flag = 1;
+					}
+					else{
+						Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+						k210.xoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=16;
+					}
+				break;
+				case 16:
+					if(k210.land == 1){
+						Vertical_Down(55,40);
+						targetHeight = 90;
+						stage = 60;
+						delaycnt = 200;
+						delay_flag = 1;
+					}
+					else{
+						Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+						k210.yoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=15;
+					}
+				break;
+				case 60:
+					k210.land = 0;
+					k210_cfg.mode=6;
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 150;
+					delay_flag = 1;
+					stage = 61;
+				break;
+				case 61:
+					if(k210.land == 1){
+						stage = 63;
+					}
+					else{
+						Horizontal_Move(k210.yoffset,10,k210.ydirection*180);
+						k210.yoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=62;
+					}
+				break;
+				case 62:
+					if(k210.land == 1){
+						stage = 63;
+					}
+					else{
+						Horizontal_Move(k210.xoffset,10,k210.xdirection*180+90);
+						k210.yoffset = 0;
+						delaycnt = 50;
+						delay_flag = 1;
+						stage=61;
+					}
+				break;
+				case 63:
+					Horizontal_Move(k210.number*8,10,180);
+					delaycnt = 210;
+					delay_flag = 1;
+					stage = 64;
+				break;
+				case 64:OneKey_Land();
+				//寻找杆子和二维码位置
+				case 50:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 200;
+					delay_flag = 1;
+					stage=51;
+				break;
+				case 51:
+					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+					k210.yoffset = 0;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=52;
+				break;
+				case 52:
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+					k210.xoffset = 0;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage=20;
+				break;
+				case 20:
+					Right_Rotate(180,90);
+					stage = 21;
+					delaycnt = 350;
+					delay_flag = 1;
+				break;
+				case 21:
+					openmv_cfg.mode = 1;
+					dt.fun[0xf6].WTS= 1;
+					delaycnt = 100;
+					delay_flag = 1;
+					stage = 22;
+					break;
+				case 22:
+					if(openmv.xoffset !=0 | openmv.yoffset != 0) stage = 23;
+					else if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(50,velocity,270);
+						openmv.xtotal += 50;
+						delaycnt = 200;
+						delay_flag = 1;
+					}
+				case 23:
+					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.xoffset,20,openmv.xdirection*180+90);
+						if(openmv.xdirection == 1)	openmv.xtotal -= openmv.xoffset;
+						else openmv.xtotal += openmv.xoffset;
+						openmv.xoffset = 0;
+						delaycnt = 60;
+						delay_flag = 1;
+						stage=24;
+					}
+				break;
+				case 24:
+					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.yoffset,20,openmv.ydirection*180);
+						openmv.ytotal += openmv.yoffset;
+						openmv.yoffset = 0;
+						delaycnt = 70;
+						delay_flag = 1;
+						stage=22;
+					}
+				break;
+				//开始识别条码
+				case 25:
+					openmv_cfg.mode=0;
+					dt.fun[0xf6].WTS=1;
+					//高度调整
+					targetHeight = 110;
+					Vertical_Down(35,10);
+					k210_cfg.mode=4;
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 250;
+					delay_flag = 1;
+					stage = 26;
+				break;
+				case 26:
+					Horizontal_Move(openmv.ytotal,50,180);
+					delaycnt = 150;
+					delay_flag = 1;
+					stage = 27;
+				break;
+				//识别到数字后闪烁
+				case 27:
+					blink(7);
+					delaycnt = 30;
+					delay_flag = 1;
+					counterLED++;
+					//2*数字
+					if(counterLED >= 2*k210.number){
+						delaycnt = 150;
+						delay_flag = 1;
+						stage = 28;
+						counterLED = 0;
+					}
+				break;
+				case 28:
+					blink(7);
+					delaycnt = 30;
+					delay_flag = 1;
+					counterLED++;
+					//2*数字
+					if(counterLED >= 2*k210.number){
+						delaycnt = 150;
+						delay_flag = 1;
+						stage = 29;
+						counterLED = 0;
+					}
+				break;
+					//返回初始高度
+				case 29:	
+					targetHeight = 145;
+					Vertical_Target(145);
+					delaycnt = 200;
+					delay_flag = 1;
+					stage = 30;
+				break;
+				case 30:
+					Horizontal_Move(20,20,90);
+					delaycnt = 200;
+					delay_flag = 1;
+					stage = 80;
+				break;
+				//x校正
+				case 70:
+					openmv_cfg.mode = 2;
+					dt.fun[0xf6].WTS = 1;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage = 71;
+				break;
+				case 71:
+					//if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 5) 
+						//Horizontal_Move((xlilun-openmv.xdistance)*2,10,90);
+					//else 
+						if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 3)
+						Horizontal_Move((openmv.xdistance - xlilun)*3,10,270);
+					openmv.xdistance = xlilun;
+					delaycnt = 150;
+					delay_flag = 1;
+					sendflag = 0;
+					stage = 7;
+				break;
+				//y修正
+				case 72:
+					openmv_cfg.mode = 2;
+					dt.fun[0xf6].WTS = 1;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage = 73;
+				break;
+				case 73:
+					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 5) 
+						Horizontal_Move(ylilun-openmv.ydistance,10,0);
+					else if(openmv.ydistance > ylilun  && openmv.ydistance - ylilun > 3)
+						Horizontal_Move((openmv.ydistance - ylilun)*3,15,180);
+					openmv.ydistance = ylilun;
+					delaycnt = 150;
+					delay_flag = 1;
+					sendflag = 0;
+					stage = 7;
+				break;
+					//x校正
+				case 74:
+					openmv_cfg.mode = 2;
+					dt.fun[0xf6].WTS = 1;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage = 75;
+				break;
+				case 75:
+					if(openmv.xdistancel < xlilunl && xlilunl - openmv.xdistancel > 7) 
+						Horizontal_Move((xlilunl-openmv.xdistancel)*1,10,90);
+					else if(openmv.xdistancel > xlilunl && openmv.xdistancel - xlilunl > 5)
+						Horizontal_Move((openmv.xdistancel - xlilunl)*3,15,270);
+					openmv.xdistancel = xlilunl;
+					delaycnt = 150;
+					delay_flag = 1;
+					sendflag = 0;
+					stage = 7;
+				break;
+					//y修正
+				//case 76:
+				//	openmv_cfg.mode = 3;
+				//	dt.fun[0xf6].WTS = 1;
+				//	delaycnt = 70;
+				//	delay_flag = 1;
+				//	stage = 77;
+				//break;
+				//case 77:
+				//	if(openmv.ydistanceu < ylilunu && ylilunu - openmv.ydistanceu > 3) 
+				//		Horizontal_Move((ylilunu-openmv.ydistanceu)*2,10,180);
+				//	else if(openmv.ydistanceu > ylilunu && openmv.ydistanceu - ylilunu > 5)
+				//		Horizontal_Move(openmv.ydistanceu - ylilunu,10,0);
+				//	openmv.ydistance = ylilun;
+				//	delaycnt = 130;
+				//	delay_flag = 1;
+				//	sendflag = 0;
+				//	stage = 7;
+				//break;
+				case 80:
+					dt.fun[0xf6].WTS = 1;
+					delaycnt = 70;
+					delay_flag = 1;
+					stage = 81;
+				break;
+				case 81:
+					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 4){ 
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                            case 6:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+							case 7:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+                            case 8:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+                            case 9:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+                        }
+                    }
+					else if(openmv.ydistance > ylilun && openmv.ydistance - ylilun > 4){
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(ylilun-openmv.ydistance,10,0);
+                            break;
+              				case 6:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+							case 7:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                            case 8:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                            case 9:Horizontal_Move(ylilun-openmv.ydistance,10,180);
+                            break;
+                        }
+                    }
+					//openmv.ydistance = ylilun;
+					delaycnt = 150;
+					delay_flag = 1;
+					sendflag = 0;
+					stage = 82;
+				break;
+				case 82:
+					if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 4){
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 6:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 7:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 8:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 9:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                        }
+                    }
+					else if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 4){
+						switch(openmv_cfg.mode){
+                            case 5:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 6:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                            case 7:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 8:Horizontal_Move(xlilun-openmv.xdistance,10,90);
+                            break;
+                            case 9:Horizontal_Move(xlilun-openmv.xdistance,10,270);
+                            break;
+                        }
+                    }
+					//openmv.xdistance = xlilun;
+					delaycnt = 150;
+					delay_flag = 1;
+					sendflag = 0;
+					if(step>=32) stage = 13;
+					else stage = 7;
+				break;
+				}
+		//超时降落			
+		if(counter >= maxcnt){
+			OneKey_Land();
+			counter = 0;
+			stage = 0;
+			hmi.mode = 0;
+		}
+	}
+}
+
+void drawNum(u8 height){
+		static u16 counter = 0;			//飞行时间计数
+		counter ++;
+		u16 maxcnt = 18000;				//最大飞行时间
+		static u8 stage = 0;			//流程执行阶段
+		static u8 counterLED = 0;		//LED闪烁次数
+		u8 velocity = 50;				//前进速度
+		LX_Change_Mode(3);				//切换到程控模式
+		
+		if(hmi.mode != hmi.oldmode){
+			counter = 0;
+			stage = 0;
+			counterLED = 0;
+			hmi.oldmode = hmi.mode;
+		}
+		
+		if(delay_flag){
+			delay20();
+		}
+		else{
+			switch(stage){
+				case 0:
+					FC_Unlock();
+					stage = 1;
+					delaycnt = 200;
+					delay_flag = 1;
+				break;
+				case 1:
+					targetHeight = height;
+					k210.number = 3;
+					OneKey_Takeoff(height);
+					stage = 2;
+					delaycnt = 200;
+					delay_flag = 1;
+				break;
+				case 2:
+					Horizontal_Move(4*40,velocity,0);
+					stage = 3;
+					delaycnt = 250;
+					delay_flag = 1;
+				break;
+				case 3:
+					Horizontal_Move(20,velocity,90); 
+					delaycnt = 100;
+					delay_flag = 1;
+					stage=4;
+				break;	
+				//K210开启字母识别，根据A位置调整
+				case 4:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 150;
+					delay_flag = 1;
+					stage=5;
+				break;
+				case 5:
+					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+					k210.yoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=6;
+				break;
+				case 6:
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+					k210.xoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=104;
+				break;
+				//K210开启字母识别，根据A位置调整
+				case 104:
+					k210_cfg.mode=2;	
+					dt.fun[0xf4].WTS=1; 
+					delaycnt = 150;
+					delay_flag = 1;
+					stage=105;
+				break;
+				case 105:
+					Horizontal_Move(k210.yoffset,20,k210.ydirection*180);
+					k210.yoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=106;
+				break;
+				case 106:
+					Horizontal_Move(k210.xoffset,20,k210.xdirection*180+90);
+					k210.xoffset = 0;
+					delaycnt = 50;
+					delay_flag = 1;
+					stage=20;
+				break;
+				//寻找杆子和二维码位置
+				case 20:
+					Right_Rotate(177,90);
+					stage = 21;
+					delaycnt = 350;
+					delay_flag = 1;
+				break;
+				case 21:
+					openmv_cfg.mode = 1;
+					dt.fun[0xf6].WTS= 1;
+					delaycnt = 100;
+					delay_flag = 1;
+					stage = 22;
+					break;
+				case 22:
+					if(openmv.xoffset !=0 | openmv.yoffset != 0) stage = 23;
+					else if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(50,velocity,270);
+						openmv.xtotal += 50;
+						delaycnt = 200;
+						delay_flag = 1;
+					}
+				case 23:
+					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.xoffset,20,openmv.xdirection*180+90);
+						if(openmv.xdirection == 1)	openmv.xtotal -= openmv.xoffset;
+						else openmv.xtotal += openmv.xoffset;
+						openmv.xoffset = 0;
+						delaycnt = 60;
+						delay_flag = 1;
+						stage=24;
+					}
+				break;
+				case 24:
+					if(openmv.ready == 1) stage = 25;
+					else{
+						Horizontal_Move(openmv.yoffset,20,openmv.ydirection*180);
+						openmv.ytotal += openmv.yoffset;
+						openmv.yoffset = 0;
+						delaycnt = 70;
+						delay_flag = 1;
+						stage=22;
+					}
+				break;
+				//开始识别条码
+				case 25:
+					openmv_cfg.mode=0;
+					dt.fun[0xf6].WTS=1;
+					//高度调整
+					targetHeight = 115;
+					Vertical_Down(35,10);
+					k210_cfg.mode=4;
+					dt.fun[0xf4].WTS=1;
+					delaycnt = 250;
+					delay_flag = 1;
+					stage = 26;
+				break;
+				case 26:
+					Horizontal_Move(openmv.ytotal-30,50,180);
+					delaycnt = 150;
+					delay_flag = 1;
+					stage = 27;
+				break;
+				//识别到数字后闪烁
+				case 27:
+					blink(7);
+					delaycnt = 30;
+					delay_flag = 1;
+					counterLED++;
+					//2*数字
+					if(counterLED >= 2*k210.number){
+						delaycnt = 150;
+						delay_flag = 1;
+						stage = 28;
+						counterLED = 0;
+					}
+				break;
+				case 28:
+					blink(7);
+					delaycnt = 30;
+					delay_flag = 1;
+					counterLED++;
+					//2*数字
+					if(counterLED >= 2*k210.number){
+						delaycnt = 150;
+						delay_flag = 1;
+						stage = 29;
+						counterLED = 0;
+					}
+				break;
+					//返回初始高度
+				case 29:	
+					targetHeight = 145;
+					Vertical_Target(145);
+					delaycnt = 200;
+					delay_flag = 1;
+					stage = 30;
+				break;
+				case 30:
+					Horizontal_Move(80,80,270);
+					delaycnt = 120;
+					delay_flag = 1;
+					if(k210.number == 2) stage = 61;
+					else if(k210.number == 3)stage =31;
+					else if(k210.number == 4) stage = 41;
+					else if(k210.number == 5) stage = 51;
+					else OneKey_Land();
+				break;
+				case 31:
+					Horizontal_Move(50,50,270);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 32;
+				break;
+				case 32:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 33;
+				break;
+				case 33:
+					Horizontal_Move(50,50,90);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 34;
+				break;
+				case 34:
+					Horizontal_Move(50,50,270);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 35;
+				break;
+				case 35:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 36;
+				break;
+				case 36:
+					Horizontal_Move(50,50,90);
+					delaycnt = 150;
+					delay_flag = 1;
+					stage = 37;
+				break;
+				case 37:
+					OneKey_Land();
+				break;
+				case 41:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 140;
+					delay_flag = 1;
+					stage = 42;
+				break;
+				case 42:
+					Horizontal_Move(50,50,270);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 43;
+				break;
+				case 43:
+					targetHeight += 35;
+					Vertical_Up(35,35);
+					delaycnt = 160;
+					delay_flag = 1;
+					stage = 44;
+				break;
+				case 44:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 140;
+					delay_flag = 1;
+					stage = 45;
+				break;
+				case 45:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 140;
+					delay_flag = 1;
+					stage = 46;
+				break;
+				case 46:
+					OneKey_Land();
+				break;
+				case 51:
+					Horizontal_Move(50,50,90);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 52;
+				break;
+				case 52:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 53;
+				break;
+				case 53:
+					Horizontal_Move(50,50,270);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 54;
+				break;
+				case 54:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 55;
+				break;
+				case 55:
+					Horizontal_Move(50,50,90);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 56;
+				break;
+				case 56:
+					OneKey_Land();
+				break;
+				case 61:
+					Horizontal_Move(50,50,270);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 62;
+				break;
+				case 62:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 63;
+				break;
+				case 63:
+					Horizontal_Move(50,50,90);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 64;
+				break;
+				case 64:
+					targetHeight -= 35;
+					Vertical_Down(35,35);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 65;
+				break;
+				case 65:
+					Horizontal_Move(50,50,270);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 66;
+				break;
+				case 66:
+					OneKey_Land();
+				break;
+				}
+		//超时降落			
+		if(counter >= maxcnt){
+			OneKey_Land();
+			counter = 0;
+			stage = 0;
+			hmi.mode = 0;
+		}
+	}
+}
+
+void spreadPUo(u8 height){
 		static u16 counter = 0;			//飞行时间计数
 		counter ++;
 		u16 maxcnt = 18000;				//最大飞行时间
@@ -581,7 +1900,7 @@ void spreadPU(u8 height){
 				case 4:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 130;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage=5;
 				break;
@@ -603,7 +1922,7 @@ void spreadPU(u8 height){
 				case 104:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 130;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage=105;
 				break;
@@ -624,7 +1943,7 @@ void spreadPU(u8 height){
 				//请求K210判断是否绿色，接到判断完毕指令后前进一格
 				case 7:
 					OneKey_Hang();
-					//if(map[1][step]== 1){
+					if(k210_cfg.map == 0){
 						if(sendflag==0){
 							k210_cfg.mode=1;
 							k210_cfg.go=1;
@@ -637,8 +1956,23 @@ void spreadPU(u8 height){
 							k210.next=0;
 							sendflag=0;
 						}
-					//}
-					//else stage = 8;
+					}
+					//map
+					else if(map[k210_cfg.map][step]== 1){
+						if(sendflag==0){
+							k210_cfg.mode=5;
+							//k210_cfg.go=1;
+							dt.fun[0xf4].WTS=1;                   
+							sendflag=1;
+						}
+						if(k210.next==1){
+							stage = 8;
+							k210_cfg.go=0;
+							k210.next=0;
+							sendflag=0;
+						}
+					}
+					else stage = 8;
 					delaycnt = 25;
 					delay_flag = 1;
 				break;
@@ -649,7 +1983,7 @@ void spreadPU(u8 height){
 					//else if(step == 29) Horizontal_Move(40,40,0);
 					else Horizontal_Move(blockLength,velocity,direction);
 					step = step + 1;
-					delaycnt = blockLength * 50 / velocity + 40;
+					delaycnt = blockLength * 50 / velocity + 50;
 					delay_flag = 1;
 					corrflag = 0;
 					stage=7;
@@ -658,7 +1992,7 @@ void spreadPU(u8 height){
 				case 10:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 200;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage=11;
 				break;
@@ -726,7 +2060,7 @@ void spreadPU(u8 height){
 				case 50:
 					k210_cfg.mode=2;	
 					dt.fun[0xf4].WTS=1; 
-					delaycnt = 200;
+					delaycnt = 150;
 					delay_flag = 1;
 					stage=51;
 				break;
@@ -747,13 +2081,13 @@ void spreadPU(u8 height){
 				case 20:
 					Right_Rotate(180,90);
 					stage = 21;
-					delaycnt = 350;
+					delaycnt = 200;
 					delay_flag = 1;
 				break;
 				case 21:
 					openmv_cfg.mode = 1;
 					dt.fun[0xf6].WTS= 1;
-					delaycnt = 100;
+					delaycnt = 120;
 					delay_flag = 1;
 					stage = 22;
 					break;
@@ -794,8 +2128,8 @@ void spreadPU(u8 height){
 					openmv_cfg.mode=0;
 					dt.fun[0xf6].WTS=1;
 					//高度调整
-					targetHeight = 115;
-					Vertical_Down(35,10);
+					targetHeight = 110;
+					Vertical_Down(40,10);
 					k210_cfg.mode=4;
 					dt.fun[0xf4].WTS=1;
 					delaycnt = 250;
@@ -803,7 +2137,7 @@ void spreadPU(u8 height){
 					stage = 26;
 				break;
 				case 26:
-					Horizontal_Move(openmv.ytotal - 20,50,180);
+					Horizontal_Move(openmv.ytotal,50,180);
 					delaycnt = 150;
 					delay_flag = 1;
 					stage = 27;
@@ -844,8 +2178,8 @@ void spreadPU(u8 height){
 					stage = 30;
 				break;
 				case 30:
-					Horizontal_Move(20,20,90);
-					delaycnt = 200;
+					Horizontal_Move(25,25,90);
+					delaycnt = 80;
 					delay_flag = 1;
 					stage = 10;
 				break;

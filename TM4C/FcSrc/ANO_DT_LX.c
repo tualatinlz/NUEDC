@@ -316,9 +316,10 @@ void HMI_Frame_Send(u8 target)
 				send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm/10%10 + 0x30;
 				send_buffer[_cnt++] = ext_sens.gen_dis.st_data.distance_cm%10 + 0x30;
 				break;
-			case 0x32:send_buffer[_cnt++] = fc_sta.fc_mode_sta + 0x30;
+			case 0x32:send_buffer[_cnt++] = k210.land + 0x30;//fc_sta.fc_mode_sta + 0x30;
 				break;
-			case 0x33:send_buffer[_cnt++] = k210.green+0x30; //识别到绿色
+			//case 0x33:send_buffer[_cnt++] = stage/10%10+0x30; //识别到绿色
+			//			send_buffer[_cnt++] = stage%10+0x30; //识别到绿色
 				break;
 			case 0x34://光流质量
 				for(int i=100;i>=1;i = i/10){
@@ -353,7 +354,7 @@ void HMI_Frame_Send(u8 target)
 				break;
 			case 0x33:send_buffer[_cnt++] = k210.next + 0x30;
 				break;
-			case 0x34:
+			case 0x34:send_buffer[_cnt++] = k210_cfg.map + 0x30;
 				break;	
 			case 0x35:send_buffer[_cnt++] = k210.number + 0x30;
 				break;		
