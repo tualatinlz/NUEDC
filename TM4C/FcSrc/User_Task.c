@@ -102,8 +102,8 @@ void spreadP(u8 height){
 					if(corrflag == 0){
 						stage = 80;
 						openmv_cfg.mode = 5;
-						xlilun = 78;
-						ylilun = 101;
+						xlilun = 82;
+						ylilun = 107;
 						corrflag = 1;
 					}
 				break;
@@ -116,7 +116,7 @@ void spreadP(u8 height){
 				break;
 			case 8:direction = 90;
 					if(corrflag == 0){
-						xlilun = 83;
+						xlilun = 84;
 						ylilun = 78;
 						stage = 80;
 						openmv_cfg.mode = 6;
@@ -142,7 +142,7 @@ void spreadP(u8 height){
 				if(corrflag == 0){
 					stage = 80;
 					openmv_cfg.mode = 7;
-					xlilun = 131;
+					xlilun = 125;
 					ylilun = 70;
 					corrflag = 1;
 				}
@@ -159,7 +159,7 @@ void spreadP(u8 height){
 					stage = 80;
 					openmv_cfg.mode = 8;
 					xlilun = 130;
-					ylilun = 14;
+					ylilun = 12;
 					corrflag = 1;
 				}
 				break;
@@ -218,13 +218,13 @@ void spreadP(u8 height){
 					delay_flag = 1;
 				break;
 				case 2:
-					Horizontal_Move(4*40,velocity,0);
+					Horizontal_Move(4*43,velocity,0);
 					stage = 3;
 					delaycnt = 250;
 					delay_flag = 1;
 				break;
 				case 3:
-					Horizontal_Move(20,velocity,90); 
+					Horizontal_Move(25,velocity,90); 
 					delaycnt = 100;
 					delay_flag = 1;
 					stage=4;
@@ -469,7 +469,7 @@ void spreadP(u8 height){
 				case 23:
 					if(openmv.ready == 1) stage = 25;
 					else{
-						Horizontal_Move(openmv.xoffset,20,openmv.xdirection*180+90);
+						Horizontal_Move(openmv.xoffset,10,openmv.xdirection*180+90);
 						if(openmv.xdirection == 1)	openmv.xtotal -= openmv.xoffset;
 						else openmv.xtotal += openmv.xoffset;
 						openmv.xoffset = 0;
@@ -633,7 +633,7 @@ void spreadP(u8 height){
 					stage = 81;
 				break;
 				case 81:
-					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 4){ 
+					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 5){ 
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(ylilun-openmv.ydistance,10,180);
                             break;
@@ -647,7 +647,7 @@ void spreadP(u8 height){
                             break;
                         }
                     }
-					else if(openmv.ydistance > ylilun && openmv.ydistance - ylilun > 4){
+					else if(openmv.ydistance > ylilun && openmv.ydistance - ylilun > 5){
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(ylilun-openmv.ydistance,10,0);
                             break;
@@ -668,7 +668,7 @@ void spreadP(u8 height){
 					stage = 82;
 				break;
 				case 82:
-					if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 4){
+					if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 5){
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(xlilun-openmv.xdistance,10,270);
                             break;
@@ -682,7 +682,7 @@ void spreadP(u8 height){
                             break;
                         }
                     }
-					else if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 4){
+					else if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 6){
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(xlilun-openmv.xdistance,10,90);
                             break;
@@ -744,8 +744,8 @@ void spreadPU(u8 height){
 					if(corrflag == 0){
 						stage = 80;
 						openmv_cfg.mode = 5;
-						xlilun = 78;
-						ylilun = 101;
+						xlilun = 82;
+						ylilun = 107;
 						corrflag = 1;
 					}
 				break;
@@ -758,7 +758,7 @@ void spreadPU(u8 height){
 				break;
 			case 8:direction = 90;
 					if(corrflag == 0){
-						xlilun = 83;
+						xlilun = 84;
 						ylilun = 78;
 						stage = 80;
 						openmv_cfg.mode = 6;
@@ -784,7 +784,7 @@ void spreadPU(u8 height){
 				if(corrflag == 0){
 					stage = 80;
 					openmv_cfg.mode = 7;
-					xlilun = 131;
+					xlilun = 125;
 					ylilun = 70;
 					corrflag = 1;
 				}
@@ -801,7 +801,7 @@ void spreadPU(u8 height){
 					stage = 80;
 					openmv_cfg.mode = 8;
 					xlilun = 130;
-					ylilun = 14;
+					ylilun = 12;
 					corrflag = 1;
 				}
 				break;
@@ -860,13 +860,13 @@ void spreadPU(u8 height){
 					delay_flag = 1;
 				break;
 				case 2:
-					Horizontal_Move(4*40,velocity,0);
+					Horizontal_Move(4*43,velocity,0);
 					stage = 3;
 					delaycnt = 250;
 					delay_flag = 1;
 				break;
 				case 3:
-					Horizontal_Move(20,velocity,90); 
+					Horizontal_Move(25,velocity,90); 
 					delaycnt = 100;
 					delay_flag = 1;
 					stage=4;
@@ -1162,7 +1162,7 @@ void spreadPU(u8 height){
 					stage = 26;
 				break;
 				case 26:
-					Horizontal_Move(openmv.ytotal,50,180);
+					Horizontal_Move(openmv.ytotal+55,50,180);
 					delaycnt = 150;
 					delay_flag = 1;
 					stage = 27;
@@ -1203,7 +1203,7 @@ void spreadPU(u8 height){
 					stage = 30;
 				break;
 				case 30:
-					Horizontal_Move(20,20,90);
+					Horizontal_Move(50,50,90);
 					delaycnt = 200;
 					delay_flag = 1;
 					stage = 80;
@@ -1292,7 +1292,7 @@ void spreadPU(u8 height){
 					stage = 81;
 				break;
 				case 81:
-					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 4){ 
+					if(openmv.ydistance < ylilun  && ylilun - openmv.ydistance > 5){ 
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(ylilun-openmv.ydistance,10,180);
                             break;
@@ -1306,7 +1306,7 @@ void spreadPU(u8 height){
                             break;
                         }
                     }
-					else if(openmv.ydistance > ylilun && openmv.ydistance - ylilun > 4){
+					else if(openmv.ydistance > ylilun && openmv.ydistance - ylilun > 5){
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(ylilun-openmv.ydistance,10,0);
                             break;
@@ -1327,7 +1327,7 @@ void spreadPU(u8 height){
 					stage = 82;
 				break;
 				case 82:
-					if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 4){
+					if(openmv.xdistance < xlilun && xlilun - openmv.xdistance > 5){
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(xlilun-openmv.xdistance,10,270);
                             break;
@@ -1341,7 +1341,7 @@ void spreadPU(u8 height){
                             break;
                         }
                     }
-					else if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 4){
+					else if(openmv.xdistance > xlilun && openmv.xdistance - xlilun > 6){
 						switch(openmv_cfg.mode){
                             case 5:Horizontal_Move(xlilun-openmv.xdistance,10,90);
                             break;
@@ -1415,7 +1415,7 @@ void drawNum(u8 height){
 					delay_flag = 1;
 				break;
 				case 3:
-					Horizontal_Move(20,velocity,90); 
+					Horizontal_Move(30,velocity,90); 
 					delaycnt = 100;
 					delay_flag = 1;
 					stage=4;
@@ -1567,11 +1567,23 @@ void drawNum(u8 height){
 				case 30:
 					Horizontal_Move(80,80,270);
 					delaycnt = 120;
-					delay_flag = 1;
-					if(k210.number == 2) stage = 61;
-					else if(k210.number == 3)stage =31;
-					else if(k210.number == 4) stage = 41;
-					else if(k210.number == 5) stage = 51;
+					delay_flag = 1;				
+					if(k210.number == 3){
+						stage =31;
+						DrvLedOnOff(1);
+					}
+					else if(k210.number == 4){
+						stage = 41;
+						DrvLedOnOff(2);
+					}
+					else if(k210.number == 5){
+						stage = 51;
+						DrvLedOnOff(3);
+					}
+					if(k210.number == 6){
+						stage = 61;
+						DrvLedOnOff(4);
+					}
 					else OneKey_Land();
 				break;
 				case 31:
@@ -1610,10 +1622,7 @@ void drawNum(u8 height){
 					Horizontal_Move(50,50,90);
 					delaycnt = 150;
 					delay_flag = 1;
-					stage = 37;
-				break;
-				case 37:
-					OneKey_Land();
+					stage = 70;
 				break;
 				case 41:
 					targetHeight -= 35;
@@ -1647,10 +1656,7 @@ void drawNum(u8 height){
 					Vertical_Down(35,35);
 					delaycnt = 140;
 					delay_flag = 1;
-					stage = 46;
-				break;
-				case 46:
-					OneKey_Land();
+					stage = 70;
 				break;
 				case 51:
 					Horizontal_Move(50,50,90);
@@ -1682,13 +1688,10 @@ void drawNum(u8 height){
 					Horizontal_Move(50,50,90);
 					delaycnt = 120;
 					delay_flag = 1;
-					stage = 56;
-				break;
-				case 56:
-					OneKey_Land();
+					stage = 70;
 				break;
 				case 61:
-					Horizontal_Move(50,50,270);
+					Horizontal_Move(25,25,90);
 					delaycnt = 120;
 					delay_flag = 1;
 					stage = 62;
@@ -1701,26 +1704,34 @@ void drawNum(u8 height){
 					stage = 63;
 				break;
 				case 63:
-					Horizontal_Move(50,50,90);
+					targetHeight -= 35;
+					Vertical_Down(35,35);
 					delaycnt = 120;
 					delay_flag = 1;
 					stage = 64;
 				break;
 				case 64:
-					targetHeight -= 35;
-					Vertical_Down(35,35);
+					Horizontal_Move(50,50,270);
 					delaycnt = 120;
 					delay_flag = 1;
 					stage = 65;
 				break;
 				case 65:
-					Horizontal_Move(50,50,270);
+					targetHeight += 35;
+					Vertical_Down(35,35);
 					delaycnt = 120;
 					delay_flag = 1;
 					stage = 66;
 				break;
 				case 66:
+					Horizontal_Move(25,25,90);
+					delaycnt = 120;
+					delay_flag = 1;
+					stage = 70;
+				break;
+				case 70:
 					OneKey_Land();
+					DrvLedOnOff(0);
 				break;
 				}
 		//³¬Ê±½µÂä			
