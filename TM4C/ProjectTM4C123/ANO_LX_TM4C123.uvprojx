@@ -509,16 +509,6 @@
               <FilePath>..\DriversBsp\Drv_BSP.h</FilePath>
             </File>
             <File>
-              <FileName>Drv_HWT101.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DriversBsp\Drv_HWT101.c</FilePath>
-            </File>
-            <File>
-              <FileName>Drv_HWT101.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\DriversBsp\Drv_HWT101.h</FilePath>
-            </File>
-            <File>
               <FileName>Drv_OpenMV.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DriversBsp\Drv_OpenMV.c</FilePath>

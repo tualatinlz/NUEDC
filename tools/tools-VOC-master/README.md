@@ -1,3 +1,8 @@
+原作者弃坑了，不过还能用
+Data/Annotations放xml，JPEGImages放jpg，修改run.py并运行即可(run.py参考原作者文档改)
+可实现数据集自动扩充，加噪声很稳，旋转建议不超过正负20度，超了误差太大
+以下为原文档内容
+
 # 对PASCAL VOC 数据集进行数据增强
 
 ### 1.GitHub仓库位置
