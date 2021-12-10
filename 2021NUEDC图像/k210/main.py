@@ -144,10 +144,10 @@ class dot_green(object):
         self.ok=0
         self.x=0
         self.y=0
-        self.THRESHOLD = (57, 100, -47, -3, 8, 45)#淡绿色阈值
+        self.THRESHOLD = (29, 75, -45, -12, -4, 47)#淡绿色阈值
         self.nownn=0
     def laser_b(self):
-        for i in range(0,2):
+        for i in range(0,1):
             laser_out.value(0)
             utime.sleep_ms(750) # 记得清
             laser_out.value(1)
@@ -181,9 +181,9 @@ class dot_green(object):
         #thresholds为黑色物体颜色的阈值，是一个元组，需要用括号［ ］括起来可以根据不同的颜色阈值更改；pixels_threshold 像素个数阈值，
         #如果色块像素数量小于这个值，会被过滤掉area_threshold 面积阈值，如果色块被框起来的面积小于这个值，会被过滤掉；merge 合并，如果
         #设置为True，那么合并所有重叠的blob为一个；margin 边界，如果设置为5，那么两个blobs如果间距5一个像素点，也会被合并。
-        for blob in img.find_blobs([self.THRESHOLD],roi=(142,124,75,75), pixels_threshold=500, area_threshold=80, merge=True, margin=5):
-            if blob.pixels()>=100:#寻找最大的黑点
-                ##先对图像进行分割，二值化，将在阈值内的区域变为白色，阈值外区域变为黑色
+        for blob in img.find_blobs([self.THRESHOLD],roi=(171,134,45,45), pixels_threshold=25, area_threshold=25, merge=True, margin=5):
+            if blob.pixels()>=20:#寻找最大的黑点 roi=(171,134,45,45), pixels_threshold=25, area_threshold=25,
+                ##先对图像进行分割，二值化，将在阈值内的区域变为白色，阈值外区域变为黑色 roi=(142,124,75,75), pixels_threshold=500, area_threshold=80
                 #img.binary([self.THRESHOLD])
                 #对图像边缘进行侵蚀，侵蚀函数erode(size, threshold=Auto)，size为kernal的大小，去除边缘相邻处多余的点。threshold用
                 #来设置去除相邻点的个数，threshold数值越大，被侵蚀掉的边缘点越多，边缘旁边白色杂点少；数值越小，被侵蚀掉的边缘点越少，边缘
@@ -224,7 +224,7 @@ class dot(object):
         self.ok=0
         self.x=0
         self.y=0
-        self.THRESHOLD = (0, 41, -24, 8, -12, 21)
+        self.THRESHOLD = (0, 47, -24, 8, -12, 21)
     def get_dis(self,wei,dat):
         a =[0xAA,0xFF,0xf1,0x04,0x00,0x00,0x00,0x00,0x00,0x00]
         if(wei==0):
@@ -257,7 +257,7 @@ class dot(object):
         #thresholds为黑色物体颜色的阈值，是一个元组，需要用括号［ ］括起来可以根据不同的颜色阈值更改；pixels_threshold 像素个数阈值，
         #如果色块像素数量小于这个值，会被过滤掉area_threshold 面积阈值，如果色块被框起来的面积小于这个值，会被过滤掉；merge 合并，如果
         #设置为True，那么合并所有重叠的blob为一个；margin 边界，如果设置为5，那么两个blobs如果间距5一个像素点，也会被合并。
-        for blob in img.find_blobs([self.THRESHOLD], pixels_threshold=1600, area_threshold=80, merge=True, margin=5):
+        for blob in img.find_blobs([self.THRESHOLD], pixels_threshold=1000, area_threshold=80, merge=True, margin=25):
             if self.pixels<blob.pixels():#寻找最大的黑点
                 ##先对图像进行分割，二值化，将在阈值内的区域变为白色，阈值外区域变为黑色
                 #img.binary([self.THRESHOLD])
@@ -277,10 +277,14 @@ class dot(object):
                 print("centre_x = %d, centre_y = %d"%(self.x, self.y))
         #判断标志位 赋值像素点数据
         if(self.ok==1):
-            num_x=(170-self.x)*0.476
-            num_y=(154-self.y)*0.476
+            if(ctrl.work_mode==0x03):
+                num_x=(160-self.x)*0.476
+                num_y=(126-self.y)*0.476
+            if(ctrl.work_mode==0x06):
+                num_x=(160-self.x)*0.476
+                num_y=(126-self.y)*0.476
             #self.send_num()
-            if(abs(num_x)<=18 and abs(num_y)<=18):
+            if(abs(num_x)<=10 and abs(num_y)<=10):
                 a =[0XAA,0XFF,0XF1,0X02,0X06,0X01,0XA3,0XCE]
                 a=bytes(a)
                 uart_A.write(a)
@@ -331,7 +335,8 @@ def change_mod():
 
 #主程序
 while(True):
-    img = sensor.snapshot()
+    if(ctrl.work_mode!=0x00):
+        img = sensor.snapshot()
     if (ctrl.work_mode==0x01):#MODE1 寻找(淡绿色)色块
         if(object1.flag==0):
             object1.find_dot(img)
@@ -339,7 +344,7 @@ while(True):
         object2.get_num()
     if (ctrl.work_mode==0x02):#MODE3 YOLO模型 字母A的识别
         object3.runn(img)
-    if (ctrl.work_mode==0x03):#MODE4 #寻找十字的坐标
+    if (ctrl.work_mode==0x03 or ctrl.work_mode==0x06):#MODE4 #寻找十字的坐标
         object4.find_dot(img)
     if (ctrl.work_mode==0x05):#MODE5 #切模式闪烁
         laser_out.value(0)

@@ -38,8 +38,8 @@ class find_gan(object):
         #GRAYSCALE_THRESHOLD =[(0, 45, -9, 24, -4, 17)]#寻杆阈值设置（彩色图）
         self.ROIS = [ # [ROI, weight]
                 (0, 100, 160, 20, 0.6, 0.0), # 你需要为你的应用程序调整权重
-                (0, 050, 160, 20, 0.3, 0.4), # 取决于你的机器人是如何设置的。
-                (0, 000, 160, 20, 0.1, 0.6)
+                (0, 050, 160, 20, 0.3, 0.0), # 取决于你的机器人是如何设置的。
+                (0, 000, 160, 20, 0.1, 1.0)
                ]
         # Compute the weight divisor (we're computing this so you don't have to make weights add to 1).
         self.weight_sum = 0 #权值和初始化
@@ -132,10 +132,10 @@ class find_gan(object):
             #    mode3.get_dis()
             #    dis_n=mode3.dis/10
 
-            elif(wide_c<17 and wide_c>=1):     #2米向前走20cm
+            elif(wide_c<19 and wide_c>=1):     #2米向前走20cm
                 print("jin")
-                self.get_dis(0,10)
-            elif(wide_c>=17):
+                self.get_dis(0,15)
+            elif(wide_c>=19):
                 True #开始识别
                 print("!!!!!!!")
                 a =[0xAA,0xFF,0xf1,0x02,0x03,0x01,0xA0,0xC8]
@@ -182,4 +182,16 @@ while(True):
             uart.write(txt)
             ctrl.work_mode=0x00
             led.off()
-
+    if (ctrl.work_mode>=0x05):#MODE新传参模式  new
+        a =[0xAA,0xFF,0xf1,0x02,0x02,0x02,0xA0,0xC8]
+        a[4]=ctrl.work_mode
+        a=bytes(a)
+        uart_b.write(a)
+        led.on()
+        time.sleep_ms(100)
+        if(uart_b.any()):
+            txt=uart_b.read()
+            txt=bytes(txt)
+            uart.write(txt)
+            ctrl.work_mode=0x00
+            led.off()
